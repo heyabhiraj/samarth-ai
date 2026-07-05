@@ -24,21 +24,27 @@ advisory.get("/", async (c) => {
 
   try {
     const alerts = await checkDrySpell(c.env, parsed.data.state, parsed.data.district, parsed.data.village);
-    const farmerId = c.get("farmerId") ?? null;
+    const farmerId = c.get("farmerId");
 
-    for (const alert of alerts) {
-      await createDocument(c.env, "alerts", {
-        farmerId,
-        state: parsed.data.state,
-        district: parsed.data.district,
-        village: parsed.data.village,
-        type: alert.type,
-        severity: alert.severity,
-        title: alert.title,
-        message: alert.message,
-        smsText: alert.smsText,
-        createdAt: alert.createdAt,
-      });
+    if (farmerId) {
+      for (const alert of alerts) {
+        try {
+          await createDocument(c.env, "alerts", {
+            farmerId,
+            state: parsed.data.state,
+            district: parsed.data.district,
+            village: parsed.data.village,
+            type: alert.type,
+            severity: alert.severity,
+            title: alert.title,
+            message: alert.message,
+            smsText: alert.smsText,
+            createdAt: alert.createdAt,
+          });
+        } catch (historyErr) {
+          console.error("Could not save alert history", historyErr);
+        }
+      }
     }
 
     return ok(c, { alerts });

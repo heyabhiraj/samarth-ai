@@ -40,17 +40,24 @@ disease.post("/", async (c) => {
     const buffer = await file.arrayBuffer();
     const result = await detectDisease(c.env, buffer, file.type, cropName, c.req.url);
 
-    await createDocument(c.env, "disease_reports", {
-      farmerId: c.get("farmerId") ?? null,
-      imageUrl: result.imageUrl,
-      disease: result.disease,
-      isHealthy: result.isHealthy,
-      confidencePct: result.confidencePct,
-      treatment: result.treatment,
-      fertilizerRecommendation: result.fertilizerRecommendation,
-      expertRecommendation: result.expertRecommendation,
-      createdAt: result.detectedAt,
-    });
+    const farmerId = c.get("farmerId");
+    if (farmerId) {
+      try {
+        await createDocument(c.env, "disease_reports", {
+          farmerId,
+          imageUrl: result.imageUrl,
+          disease: result.disease,
+          isHealthy: result.isHealthy,
+          confidencePct: result.confidencePct,
+          treatment: result.treatment,
+          fertilizerRecommendation: result.fertilizerRecommendation,
+          expertRecommendation: result.expertRecommendation,
+          createdAt: result.detectedAt,
+        });
+      } catch (historyErr) {
+        console.error("Could not save disease report history", historyErr);
+      }
+    }
 
     return ok(c, result);
   } catch (err) {

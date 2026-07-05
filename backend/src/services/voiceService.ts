@@ -39,16 +39,25 @@ Answer the farmer's question helpfully and accurately in ${languageName} only. K
 and easy to understand for someone with limited literacy. If the question needs data you don't have (exact weather, soil test
 results, etc.), say so honestly and suggest what the farmer should check, rather than guessing. Give a confidencePct for your answer.`;
 
-  const result = await generateJSON<{ answer: string; confidencePct: number }>(
-    env,
-    prompt,
-    VOICE_SCHEMA,
-    ANTI_HALLUCINATION_INSTRUCTION
-  );
+  try {
+    const result = await generateJSON<{ answer: string; confidencePct: number }>(
+      env,
+      prompt,
+      VOICE_SCHEMA,
+      ANTI_HALLUCINATION_INSTRUCTION
+    );
 
-  return {
-    answer: result.answer,
-    language: request.language,
-    confidencePct: result.confidencePct,
-  };
+    return {
+      answer: result.answer,
+      language: request.language,
+      confidencePct: result.confidencePct,
+    };
+  } catch {
+    const location = request.context?.state ? ` for ${request.context.district ?? "your area"}, ${request.context.state}` : "";
+    return {
+      answer: `I cannot reach the AI service right now. For this question${location}, check today's weather, the top 5 cm of soil moisture, and your crop stage before acting. If leaves are wilting or the soil is dry, give a light irrigation; if rain is likely or soil is moist, wait and check again tomorrow.`,
+      language: request.language,
+      confidencePct: 35,
+    };
+  }
 }

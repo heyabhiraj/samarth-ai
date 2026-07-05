@@ -67,10 +67,17 @@ Return two things separated by "|||":
 2. A friendly 1-2 sentence advisory message with a concrete recommended action (e.g. irrigate now, delay sowing, cover nursery, harvest before rain).
 Keep language simple. Do not add any other text.`;
 
-  const raw = await generateText(env, prompt);
-  const [titlePart, messagePart] = raw.split("|||").map((s) => s.trim());
-  const title = titlePart || "Farm Advisory";
-  const message = messagePart || situationSummary;
+  let title = type === "rain" ? "Rain Alert" : "Dry Spell Alert";
+  let message = situationSummary;
+
+  try {
+    const raw = await generateText(env, prompt);
+    const [titlePart, messagePart] = raw.split("|||").map((s) => s.trim());
+    title = titlePart || title;
+    message = messagePart || message;
+  } catch {
+    message = `${situationSummary} Check the field early today and adjust irrigation or field work based on actual soil moisture.`;
+  }
 
   return {
     type,

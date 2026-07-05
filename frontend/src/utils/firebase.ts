@@ -10,6 +10,10 @@ const firebaseConfig = {
   appId: import.meta.env.PUBLIC_FIREBASE_APP_ID,
 };
 
+function hasFirebaseConfig(): boolean {
+  return Object.values(firebaseConfig).every((value) => typeof value === "string" && value.length > 0 && !value.startsWith("your-"));
+}
+
 // The Firebase SDK is ~40KB gzipped — dynamically imported here so pages
 // that never touch an authenticated feature (most of the app works
 // anonymously) don't pay that cost just for importing this module. It's
@@ -23,6 +27,10 @@ let authPromise: Promise<Auth> | null = null;
 let cachedUser: User | null | undefined = undefined;
 
 async function loadAuth(): Promise<Auth> {
+  if (!hasFirebaseConfig()) {
+    throw new Error("Firebase Authentication is not configured. Set PUBLIC_FIREBASE_* values to enable login.");
+  }
+
   if (!authPromise) {
     authPromise = (async () => {
       const [{ initializeApp, getApps }, { getAuth, onAuthStateChanged }] = await Promise.all([
@@ -44,17 +52,20 @@ async function loadAuth(): Promise<Auth> {
 
 /** Best-effort synchronous check — false until the SDK has loaded once; use waitForAuthInit() when correctness matters more than instant paint. */
 export function isLoggedIn(): boolean {
+  if (!hasFirebaseConfig()) return false;
   void loadAuth(); // kick off loading in the background so state resolves soon
   return cachedUser !== null && cachedUser !== undefined;
 }
 
 export function getCachedUser(): User | null {
+  if (!hasFirebaseConfig()) return null;
   void loadAuth();
   return cachedUser ?? null;
 }
 
 /** Resolves once Firebase has loaded and restored (or confirmed there's no) persisted session. */
 export async function waitForAuthInit(): Promise<User | null> {
+  if (!hasFirebaseConfig()) return null;
   const auth = await loadAuth();
   if (cachedUser !== undefined) return cachedUser;
   const { onAuthStateChanged } = await import("firebase/auth");
@@ -68,6 +79,7 @@ export async function waitForAuthInit(): Promise<User | null> {
 
 /** Returns a fresh (auto-refreshed by the SDK) ID token, or null if signed out. */
 export async function getIdToken(): Promise<string | null> {
+  if (!hasFirebaseConfig()) return null;
   const user = await waitForAuthInit();
   return user ? user.getIdToken() : null;
 }

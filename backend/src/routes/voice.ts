@@ -27,14 +27,21 @@ voice.post("/", async (c) => {
   try {
     const result = await answerVoiceQuery(c.env, parsed.data);
 
-    await createDocument(c.env, "voice_queries", {
-      farmerId: c.get("farmerId") ?? null,
-      queryText: parsed.data.query,
-      answerText: result.answer,
-      language: result.language,
-      confidencePct: result.confidencePct,
-      createdAt: new Date().toISOString(),
-    });
+    const farmerId = c.get("farmerId");
+    if (farmerId) {
+      try {
+        await createDocument(c.env, "voice_queries", {
+          farmerId,
+          queryText: parsed.data.query,
+          answerText: result.answer,
+          language: result.language,
+          confidencePct: result.confidencePct,
+          createdAt: new Date().toISOString(),
+        });
+      } catch (historyErr) {
+        console.error("Could not save voice query history", historyErr);
+      }
+    }
 
     return ok(c, result);
   } catch (err) {

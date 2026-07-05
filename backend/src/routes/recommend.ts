@@ -27,17 +27,24 @@ recommend.post("/", async (c) => {
   try {
     const result = await recommendCrops(c.env, parsed.data);
 
-    await createDocument(c.env, "crop_recommendations", {
-      farmerId: c.get("farmerId") ?? null,
-      state: parsed.data.state,
-      district: parsed.data.district,
-      village: parsed.data.village,
-      season: parsed.data.season,
-      recommendations: result.recommendations,
-      aiSummary: result.aiSummary,
-      confidencePct: result.confidencePct,
-      createdAt: new Date().toISOString(),
-    });
+    const farmerId = c.get("farmerId");
+    if (farmerId) {
+      try {
+        await createDocument(c.env, "crop_recommendations", {
+          farmerId,
+          state: parsed.data.state,
+          district: parsed.data.district,
+          village: parsed.data.village,
+          season: parsed.data.season,
+          recommendations: result.recommendations,
+          aiSummary: result.aiSummary,
+          confidencePct: result.confidencePct,
+          createdAt: new Date().toISOString(),
+        });
+      } catch (historyErr) {
+        console.error("Could not save crop recommendation history", historyErr);
+      }
+    }
 
     return ok(c, result);
   } catch (err) {
