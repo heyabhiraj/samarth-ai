@@ -1,0 +1,28 @@
+---
+interface Props {
+  id: string;
+  latitude: number;
+  longitude: number;
+  label?: string;
+  ndvi?: number;
+  height?: number;
+}
+
+const { id, latitude, longitude, label, ndvi, height = 280 } = Astro.props;
+---
+
+<div
+  id={id}
+  data-map
+  data-lat={latitude}
+  data-lng={longitude}
+  data-label={label}
+  data-ndvi={ndvi}
+  style={`height: ${height}px`}
+  class="w-full overflow-hidden rounded-2xl border border-white/40 dark:border-white/10"
+>
+</div>
+
+<script>
+  import "@/utils/map";
+</script>

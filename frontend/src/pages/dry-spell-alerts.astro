@@ -1,0 +1,118 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import LocationForm from "@/components/LocationForm.astro";
+import Icon from "@/components/Icon.astro";
+---
+
+<BaseLayout title="Dry Spell Alerts">
+  <div class="mb-6">
+    <h1 class="section-heading">Dry Spell &amp; Rain Alerts</h1>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      We check rainfall forecast, temperature and soil moisture to warn you before a dry spell hurts your crop.
+    </p>
+  </div>
+
+  <LocationForm formId="dryspell-form" submitLabel="Check Alerts" />
+
+  <div id="dryspell-loading" class="mt-6 hidden grid gap-3">
+    <div class="skeleton h-20"></div>
+    <div class="skeleton h-20"></div>
+  </div>
+
+  <div id="dryspell-results" class="mt-8 hidden grid gap-4 animate-slide-up"></div>
+
+  <div id="dryspell-empty" class="mt-8 hidden glass-card flex flex-col items-center gap-2 p-6 text-center">
+    <Icon name="check-circle" class="h-8 w-8 text-kisan-600 dark:text-kisan-400" />
+    <p class="text-sm font-medium text-kisan-700 dark:text-kisan-300">No dry spell or heavy rain risk detected for the next 5 days.</p>
+  </div>
+
+  <template id="alert-template">
+    <div class="glass-panel flex flex-col gap-3 border p-4">
+      <div class="flex items-start gap-3">
+        <span class="mt-0.5 shrink-0" data-field="icon">
+          <Icon name="alert-triangle" class="h-5 w-5" />
+        </span>
+        <div class="flex-1">
+          <p class="font-semibold text-slate-900 dark:text-white" data-field="title"></p>
+          <p class="mt-0.5 text-sm text-slate-600 dark:text-slate-300" data-field="message"></p>
+        </div>
+      </div>
+      <form class="flex gap-2 sms-form" data-field="smsForm">
+        <input type="tel" placeholder="10-digit phone number" pattern="[0-9]{10}" required class="flex-1 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white" />
+        <button type="submit" class="btn-secondary !px-4 !py-2 text-xs">
+          <Icon name="send" class="h-3.5 w-3.5" /> Send SMS
+        </button>
+      </form>
+    </div>
+  </template>
+
+  <script>
+    import { api } from "@/services/api";
+    import { showToast } from "@/utils/toast";
+    import { severityToColor } from "@/utils/format";
+    import type { AdvisoryAlert } from "@/types";
+
+    const form = document.getElementById("dryspell-form") as HTMLFormElement | null;
+    const loadingEl = document.getElementById("dryspell-loading");
+    const resultsEl = document.getElementById("dryspell-results");
+    const emptyEl = document.getElementById("dryspell-empty");
+    const template = document.getElementById("alert-template") as HTMLTemplateElement | null;
+
+    function renderAlert(alert: AdvisoryAlert) {
+      if (!template || !resultsEl) return;
+      const node = template.content.cloneNode(true) as DocumentFragment;
+      const container = node.querySelector("div") as HTMLElement;
+      container.className = `glass-panel flex flex-col gap-3 border p-4 ${severityToColor(alert.severity)}`;
+      (node.querySelector('[data-field="title"]') as HTMLElement).textContent = alert.title;
+      (node.querySelector('[data-field="message"]') as HTMLElement).textContent = alert.message;
+
+      const smsForm = node.querySelector('[data-field="smsForm"]') as HTMLFormElement;
+      smsForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const phoneInput = smsForm.querySelector("input") as HTMLInputElement;
+        try {
+          const res = await api.sendSms(phoneInput.value, alert);
+          if (res.sent) {
+            showToast("SMS advisory sent successfully", "success");
+          } else {
+            showToast(res.reason || "SMS advisory generated (provider not configured yet)", "info");
+          }
+        } catch {
+          showToast("Could not send SMS advisory", "error");
+        }
+      });
+
+      resultsEl.appendChild(node);
+    }
+
+    form?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const payload = {
+        state: String(formData.get("state") || ""),
+        district: String(formData.get("district") || ""),
+        village: (formData.get("village") as string) || undefined,
+      };
+
+      resultsEl?.classList.add("hidden");
+      emptyEl?.classList.add("hidden");
+      loadingEl?.classList.remove("hidden");
+
+      try {
+        const { alerts } = await api.getAdvisory(payload);
+        if (resultsEl) resultsEl.innerHTML = "";
+
+        if (alerts.length === 0) {
+          emptyEl?.classList.remove("hidden");
+        } else {
+          alerts.forEach(renderAlert);
+          resultsEl?.classList.remove("hidden");
+        }
+      } catch (err) {
+        showToast("Could not check dry spell status. Please try again.", "error");
+      } finally {
+        loadingEl?.classList.add("hidden");
+      }
+    });
+  </script>
+</BaseLayout>

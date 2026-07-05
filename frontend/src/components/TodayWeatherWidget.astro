@@ -1,0 +1,121 @@
+---
+import Icon from "@/components/Icon.astro";
+---
+
+<div id="today-weather" class="glass-card p-6 sm:p-8">
+  <p class="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-500 dark:text-slate-400">
+    <Icon name="cloud-rain" class="h-4 w-4" />
+    <span data-i18n="weather.title">Today's Weather</span>
+  </p>
+
+  <div id="weather-prompt" class="flex flex-col items-center gap-3 py-4 text-center">
+    <span class="flex h-14 w-14 items-center justify-center rounded-full bg-kisan-100 text-kisan-600 dark:bg-kisan-900/40 dark:text-kisan-400">
+      <Icon name="map-pin" class="h-7 w-7" />
+    </span>
+    <p class="max-w-xs text-sm text-slate-500 dark:text-slate-400" data-i18n="weather.allowPrompt">
+      Allow location access to see your local weather
+    </p>
+    <button id="weather-allow-btn" type="button" class="btn-primary mt-1">
+      <span data-i18n="weather.allowButton">Show My Weather</span>
+    </button>
+  </div>
+
+  <div id="weather-loading" class="hidden grid grid-cols-3 gap-3">
+    <div class="skeleton col-span-3 h-16"></div>
+    <div class="skeleton h-14"></div>
+    <div class="skeleton h-14"></div>
+    <div class="skeleton h-14"></div>
+  </div>
+
+  <div id="weather-error" class="hidden flex-col items-center gap-3 py-4 text-center">
+    <span class="flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+      <Icon name="alert-triangle" class="h-7 w-7" />
+    </span>
+    <p id="weather-error-message" class="max-w-xs text-sm text-slate-500 dark:text-slate-400"></p>
+    <div class="flex flex-wrap items-center justify-center gap-2">
+      <button id="weather-retry-btn" type="button" class="btn-secondary !py-2 text-sm">
+        <span data-i18n="weather.retry">Try Again</span>
+      </button>
+      <a href="/weather" class="btn-ghost text-sm">Enter location manually</a>
+    </div>
+  </div>
+
+  <div id="weather-result" class="hidden">
+    <div class="flex items-center gap-4">
+      <span id="weather-icon" class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 text-white"></span>
+      <div>
+        <p id="weather-temp" class="text-4xl font-extrabold text-slate-900 dark:text-white"></p>
+        <p id="weather-condition" class="text-sm font-medium text-slate-500 dark:text-slate-400"></p>
+        <p id="weather-place" class="text-xs text-slate-400 dark:text-slate-500"></p>
+      </div>
+    </div>
+
+    <div class="mt-5 grid grid-cols-3 gap-3">
+      <div class="glass-panel flex flex-col items-center gap-1 p-3 text-center">
+        <Icon name="droplets" class="h-4 w-4 text-sky-500" />
+        <p id="weather-humidity" class="text-sm font-bold text-slate-800 dark:text-slate-100"></p>
+        <p class="text-[11px] text-slate-400" data-i18n="weather.humidity">Humidity</p>
+      </div>
+      <div class="glass-panel flex flex-col items-center gap-1 p-3 text-center">
+        <Icon name="wind" class="h-4 w-4 text-slate-500" />
+        <p id="weather-wind" class="text-sm font-bold text-slate-800 dark:text-slate-100"></p>
+        <p class="text-[11px] text-slate-400" data-i18n="weather.wind">Wind</p>
+      </div>
+      <div class="glass-panel flex flex-col items-center gap-1 p-3 text-center">
+        <Icon name="sun" class="h-4 w-4 text-amber-500" />
+        <p id="weather-uv" class="text-sm font-bold text-slate-800 dark:text-slate-100"></p>
+        <p class="text-[11px] text-slate-400" data-i18n="weather.uvIndex">UV Index</p>
+      </div>
+    </div>
+
+    <a href="/weather" class="btn-secondary mt-5 w-full !py-2.5 text-sm">
+      <span data-i18n="weather.viewForecast">View 7-Day Forecast</span>
+    </a>
+  </div>
+</div>
+
+<script>
+  import { api } from "@/services/api";
+  import { getCurrentPosition } from "@/utils/geolocate";
+  import { t } from "@/utils/i18n";
+  import { weatherConditionIcon } from "@/utils/icons";
+
+  const promptEl = document.getElementById("weather-prompt");
+  const loadingEl = document.getElementById("weather-loading");
+  const errorEl = document.getElementById("weather-error");
+  const resultEl = document.getElementById("weather-result");
+  const errorMessageEl = document.getElementById("weather-error-message");
+
+  function showOnly(el: HTMLElement | null) {
+    [promptEl, loadingEl, errorEl, resultEl].forEach((section) => {
+      section?.classList.toggle("hidden", section !== el);
+    });
+  }
+
+  async function loadWeather() {
+    showOnly(loadingEl);
+
+    try {
+      const position = await getCurrentPosition();
+      const { latitude, longitude } = position.coords;
+      const geo = await api.reverseGeocode(latitude, longitude);
+      const weather = await api.getWeather({ state: geo.state, district: geo.district });
+
+      document.getElementById("weather-icon")!.innerHTML = weatherConditionIcon(weather.current.condition, "h-8 w-8");
+      document.getElementById("weather-temp")!.textContent = `${Math.round(weather.current.tempC)}°C`;
+      document.getElementById("weather-condition")!.textContent = weather.current.condition;
+      document.getElementById("weather-place")!.textContent = geo.precise ? `${geo.district}, ${geo.state}` : `Near ${geo.state} (approximate)`;
+      document.getElementById("weather-humidity")!.textContent = `${weather.current.humidityPct}%`;
+      document.getElementById("weather-wind")!.textContent = `${Math.round(weather.current.windKph)} kph`;
+      document.getElementById("weather-uv")!.textContent = `${weather.current.uvIndex}`;
+
+      showOnly(resultEl);
+    } catch (err) {
+      if (errorMessageEl) errorMessageEl.textContent = (err as Error).message || t("common.tryAgain");
+      showOnly(errorEl);
+    }
+  }
+
+  document.getElementById("weather-allow-btn")?.addEventListener("click", loadWeather);
+  document.getElementById("weather-retry-btn")?.addEventListener("click", loadWeather);
+</script>

@@ -1,0 +1,98 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import LocationForm from "@/components/LocationForm.astro";
+import Icon from "@/components/Icon.astro";
+---
+
+<BaseLayout title="Groundwater">
+  <div class="mb-6">
+    <h1 class="section-heading">Groundwater Insights</h1>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      Understand your water table depth, availability trend, and get an AI-recommended irrigation method.
+    </p>
+  </div>
+
+  <LocationForm formId="groundwater-form" submitLabel="Check Groundwater" />
+
+  <div id="gw-loading" class="mt-6 hidden grid gap-4 sm:grid-cols-3">
+    <div class="skeleton h-28"></div>
+    <div class="skeleton h-28"></div>
+    <div class="skeleton h-28"></div>
+  </div>
+
+  <div id="gw-results" class="mt-8 hidden grid gap-6 animate-slide-up">
+    <div class="grid gap-4 sm:grid-cols-3">
+      <div class="glass-card p-5 text-center">
+        <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Depth to Water</p>
+        <p id="gw-depth" class="mt-1 text-3xl font-extrabold text-sky-600 dark:text-sky-400"></p>
+        <p class="mt-1 text-xs text-slate-400">meters below ground</p>
+      </div>
+      <div class="glass-card p-5 text-center">
+        <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Availability</p>
+        <p id="gw-availability" class="mt-1 text-lg font-bold capitalize text-slate-900 dark:text-white"></p>
+        <p id="gw-risk" class="mt-1 inline-block stat-pill capitalize"></p>
+      </div>
+      <div class="glass-card p-5 text-center">
+        <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Recharge Trend</p>
+        <p id="gw-trend" class="mt-1 flex items-center justify-center gap-1 text-lg font-bold capitalize text-slate-900 dark:text-white"></p>
+      </div>
+    </div>
+
+    <div class="glass-card border border-kisan-200/60 p-5 dark:border-kisan-800/40">
+      <p class="flex items-center gap-2 text-sm font-semibold text-kisan-700 dark:text-kisan-300">
+        <Icon name="droplets" class="h-4 w-4" /> Recommended Irrigation Method
+      </p>
+      <p id="gw-method" class="mt-2 text-lg font-bold text-slate-900 dark:text-white"></p>
+      <p id="gw-reasoning" class="mt-1 text-sm text-slate-600 dark:text-slate-300"></p>
+    </div>
+  </div>
+
+  <script>
+    import { api } from "@/services/api";
+    import { showToast } from "@/utils/toast";
+    import { svgIcon } from "@/utils/icons";
+
+    const form = document.getElementById("groundwater-form") as HTMLFormElement | null;
+    const loadingEl = document.getElementById("gw-loading");
+    const resultsEl = document.getElementById("gw-results");
+
+    const TREND_ICON: Record<string, string> = { rising: "trending-up", stable: "minus", declining: "trending-down" };
+    const TREND_COLOR: Record<string, string> = {
+      rising: "text-kisan-600 dark:text-kisan-400",
+      stable: "text-slate-500 dark:text-slate-400",
+      declining: "text-rose-600 dark:text-rose-400",
+    };
+
+    form?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const payload = {
+        state: String(formData.get("state") || ""),
+        district: String(formData.get("district") || ""),
+        village: (formData.get("village") as string) || undefined,
+      };
+
+      resultsEl?.classList.add("hidden");
+      loadingEl?.classList.remove("hidden");
+
+      try {
+        const data = await api.getGroundwater(payload);
+
+        document.getElementById("gw-depth")!.textContent = `${data.depthMeters}m`;
+        document.getElementById("gw-availability")!.textContent = data.availabilityStatus.replace("-", " ");
+        const riskEl = document.getElementById("gw-risk")!;
+        riskEl.textContent = `${data.waterRisk} risk`;
+        const trendEl = document.getElementById("gw-trend")!;
+        trendEl.innerHTML = `<span class="${TREND_COLOR[data.rechargeTrend] ?? ""}">${svgIcon((TREND_ICON[data.rechargeTrend] ?? "minus") as any, "h-4 w-4")}</span> <span>${data.rechargeTrend}</span>`;
+        document.getElementById("gw-method")!.textContent = data.recommendedIrrigationMethod;
+        document.getElementById("gw-reasoning")!.textContent = data.irrigationReasoning;
+
+        resultsEl?.classList.remove("hidden");
+      } catch (err) {
+        showToast("Could not fetch groundwater data. Please try again.", "error");
+      } finally {
+        loadingEl?.classList.add("hidden");
+      }
+    });
+  </script>
+</BaseLayout>

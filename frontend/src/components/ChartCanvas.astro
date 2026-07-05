@@ -1,0 +1,20 @@
+---
+interface Props {
+  id: string;
+  type: "line" | "bar";
+  labels: string[];
+  datasets: Array<{ label: string; data: number[]; color?: string }>;
+  height?: number;
+}
+
+const { id, type, labels, datasets, height = 240 } = Astro.props;
+const spec = JSON.stringify({ type, labels, datasets });
+---
+
+<div style={`height: ${height}px`} class="relative w-full">
+  <canvas id={id} data-chart={spec}></canvas>
+</div>
+
+<script>
+  import "@/utils/charts";
+</script>

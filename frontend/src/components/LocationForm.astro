@@ -1,0 +1,112 @@
+---
+import Icon from "@/components/Icon.astro";
+import { INDIAN_STATES } from "@/utils/constants";
+
+interface Props {
+  formId: string;
+  submitLabel?: string;
+}
+
+const { formId, submitLabel = "Get Insights" } = Astro.props;
+---
+
+<form id={formId} class="glass-card grid gap-4 p-5 sm:p-6" data-location-form>
+  <button
+    type="button"
+    data-use-location-btn
+    class="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-kisan-400/60 bg-kisan-50/60 px-4 py-3 text-sm font-semibold text-kisan-700 transition-colors hover:bg-kisan-50 dark:border-kisan-700/50 dark:bg-kisan-950/20 dark:text-kisan-300"
+  >
+    <Icon name="map-pin" class="h-4 w-4" />
+    <span data-i18n="common.useMyLocation">Use My Location</span>
+  </button>
+  <p class="hidden text-center text-xs font-medium text-slate-500 dark:text-slate-400" data-location-status></p>
+
+  <div class="grid gap-4 sm:grid-cols-3">
+    <label class="grid gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+      <span data-i18n="wizard.step1.state">State</span>
+      <select name="state" required class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-slate-800 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white">
+        <option value="" disabled selected>Select state</option>
+        {INDIAN_STATES.map((state) => <option value={state}>{state}</option>)}
+      </select>
+    </label>
+    <label class="grid gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+      <span data-i18n="wizard.step1.district">District</span>
+      <input
+        name="district"
+        required
+        placeholder="e.g. Guntur"
+        class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-slate-800 placeholder:text-slate-400 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white"
+      />
+    </label>
+    <label class="grid gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+      <span data-i18n="wizard.step1.village">Village</span> <span class="font-normal text-slate-400" data-i18n="common.optional">(optional)</span>
+      <input
+        name="village"
+        placeholder="e.g. Pedapalem"
+        class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-slate-800 placeholder:text-slate-400 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white"
+      />
+    </label>
+  </div>
+
+  <slot name="extra-fields" />
+
+  <div class="flex items-center justify-between gap-3">
+    <p class="text-xs text-slate-400" data-form-hint>Data is combined with live weather, soil, groundwater & satellite feeds.</p>
+    <button type="submit" class="btn-primary shrink-0" data-submit-btn>
+      <span data-submit-label>{submitLabel}</span>
+    </button>
+  </div>
+</form>
+
+<script>
+  import "@/utils/prefill-location";
+  import "@/utils/i18n";
+  import { detectLocation } from "@/utils/geolocate";
+  import { showToast } from "@/utils/toast";
+  import { t } from "@/utils/i18n";
+
+  function initLocationButtons() {
+    document.querySelectorAll<HTMLButtonElement>("[data-use-location-btn]").forEach((btn) => {
+      if (btn.dataset.bound) return;
+      btn.dataset.bound = "true";
+
+      const form = btn.closest("form");
+      const statusEl = form?.querySelector<HTMLElement>("[data-location-status]");
+
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        if (statusEl) {
+          statusEl.textContent = t("common.detectingLocation");
+          statusEl.classList.remove("hidden");
+        }
+
+        try {
+          const location = await detectLocation();
+          const stateEl = form?.elements.namedItem("state") as HTMLSelectElement | null;
+          const districtEl = form?.elements.namedItem("district") as HTMLInputElement | null;
+
+          if (stateEl) {
+            const match = Array.from(stateEl.options).find((o) => o.value.toLowerCase() === location.state.toLowerCase());
+            stateEl.value = match ? match.value : location.state;
+          }
+          if (districtEl) districtEl.value = location.district;
+
+          if (statusEl) statusEl.classList.add("hidden");
+          if (location.precise) {
+            showToast(`${location.district}, ${location.state}`, "success");
+          } else {
+            showToast(`Approximate location: ${location.state} (exact area unavailable)`, "info");
+          }
+        } catch (err) {
+          if (statusEl) statusEl.classList.add("hidden");
+          showToast((err as Error).message, "error");
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", initLocationButtons);
+  document.addEventListener("astro:page-load", initLocationButtons);
+</script>

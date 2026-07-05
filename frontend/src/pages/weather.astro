@@ -1,0 +1,142 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import LocationForm from "@/components/LocationForm.astro";
+---
+
+<BaseLayout title="Weather Intelligence">
+  <div class="mb-6">
+    <h1 class="section-heading">Weather Intelligence</h1>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">7-day forecast with plain-language irrigation advice for your location.</p>
+  </div>
+
+  <LocationForm formId="weather-form" submitLabel="Get Weather" />
+
+  <div id="weather-loading" class="mt-6 hidden gap-4 sm:grid-cols-4">
+    <div class="skeleton h-24"></div>
+    <div class="skeleton h-24"></div>
+    <div class="skeleton h-24"></div>
+    <div class="skeleton h-24"></div>
+  </div>
+
+  <div id="weather-results" class="mt-8 hidden gap-6 animate-slide-up">
+    <div id="weather-advice" class="hidden"></div>
+
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" id="weather-stats"></div>
+
+    <div class="glass-card p-5 sm:p-6">
+      <h2 class="mb-4 text-base font-bold text-slate-900 dark:text-white">7-Day Temperature Forecast (°C)</h2>
+      <div id="temp-chart-mount"></div>
+    </div>
+
+    <div class="glass-card p-5 sm:p-6">
+      <h2 class="mb-4 text-base font-bold text-slate-900 dark:text-white">Rain Probability (%)</h2>
+      <div id="rain-chart-mount"></div>
+    </div>
+  </div>
+
+  <script>
+    import { api } from "@/services/api";
+    import { showToast } from "@/utils/toast";
+    import { formatDayShort } from "@/utils/format";
+    import { severityToColor } from "@/utils/format";
+    import { svgIcon } from "@/utils/icons";
+
+    const form = document.getElementById("weather-form") as HTMLFormElement | null;
+    const loadingEl = document.getElementById("weather-loading");
+    const resultsEl = document.getElementById("weather-results");
+    const statsEl = document.getElementById("weather-stats");
+    const adviceEl = document.getElementById("weather-advice");
+
+    function statCard(label: string, value: string, sublabel: string, iconBg: string, iconName: Parameters<typeof svgIcon>[0]) {
+      const div = document.createElement("div");
+      div.className = "glass-card flex items-center gap-4 p-4 sm:p-5";
+      div.innerHTML = `
+        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${iconBg} text-white shadow-md">${svgIcon(iconName, "h-5 w-5")}</span>
+        <div class="min-w-0">
+          <p class="truncate text-xs font-medium text-slate-500 dark:text-slate-400">${label}</p>
+          <p class="truncate text-lg font-bold text-slate-900 dark:text-white">${value}</p>
+          <p class="truncate text-xs text-slate-400 dark:text-slate-500">${sublabel}</p>
+        </div>`;
+      return div;
+    }
+
+    async function mountChart(id: string, type: "line" | "bar", labels: string[], datasets: any[]) {
+      const { default: ChartMod } = await import("chart.js/auto");
+      const canvas = document.createElement("canvas");
+      canvas.id = id;
+      canvas.height = 240;
+      const wrap = document.createElement("div");
+      wrap.style.height = "240px";
+      wrap.appendChild(canvas);
+      const mount = document.getElementById(id === "temp-chart" ? "temp-chart-mount" : "rain-chart-mount");
+      if (mount) {
+        mount.innerHTML = "";
+        mount.appendChild(wrap);
+      }
+      new ChartMod(canvas, {
+        type,
+        data: { labels, datasets },
+        options: { responsive: true, maintainAspectRatio: false },
+      });
+    }
+
+    form?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const payload = {
+        state: String(formData.get("state") || ""),
+        district: String(formData.get("district") || ""),
+        village: (formData.get("village") as string) || undefined,
+      };
+
+      resultsEl?.classList.remove("grid");
+      resultsEl?.classList.add("hidden");
+      loadingEl?.classList.add("grid");
+      loadingEl?.classList.remove("hidden");
+
+      try {
+        const [weather, advisory] = await Promise.all([api.getWeather(payload), api.getAdvisory(payload).catch(() => ({ alerts: [] }))]);
+
+        if (statsEl) {
+          statsEl.innerHTML = "";
+          statsEl.appendChild(statCard("Temperature", `${weather.current.tempC}°C`, weather.current.condition, "from-amber-500 to-amber-600", "thermometer"));
+          statsEl.appendChild(statCard("Humidity", `${weather.current.humidityPct}%`, "Relative humidity", "from-sky-500 to-sky-700", "droplet"));
+          statsEl.appendChild(statCard("Wind", `${weather.current.windKph} kph`, "Current wind speed", "from-slate-500 to-slate-700", "wind"));
+          statsEl.appendChild(statCard("UV Index", `${weather.current.uvIndex}`, "Today's UV level", "from-rose-500 to-rose-600", "sun"));
+        }
+
+        if (adviceEl) {
+          adviceEl.classList.remove("hidden");
+          const alerts = advisory.alerts;
+          if (alerts.length === 0) {
+            adviceEl.innerHTML = `<div class="glass-card flex items-center gap-3 border border-kisan-200/60 p-4 dark:border-kisan-800/40"><span class="text-kisan-600 dark:text-kisan-400">${svgIcon("check-circle", "h-5 w-5")}</span><p class="text-sm font-medium text-kisan-700 dark:text-kisan-300">No irrigation action required right now. Rainfall and soil conditions are within a safe range.</p></div>`;
+          } else {
+            adviceEl.innerHTML = alerts
+              .map(
+                (a: any) =>
+                  `<div class="glass-panel mb-3 border p-4 ${severityToColor(a.severity)}"><p class="font-semibold">${a.title}</p><p class="mt-0.5 text-sm">${a.message}</p></div>`
+              )
+              .join("");
+          }
+        }
+
+        const labels = weather.forecast.map((d: any) => formatDayShort(d.date));
+        await mountChart("temp-chart", "line", labels, [
+          { label: "Max °C", data: weather.forecast.map((d: any) => d.maxTempC), borderColor: "#e11d48", backgroundColor: "#e11d4833", tension: 0.35 },
+          { label: "Min °C", data: weather.forecast.map((d: any) => d.minTempC), borderColor: "#0ea5e9", backgroundColor: "#0ea5e933", tension: 0.35 },
+        ]);
+        await mountChart("rain-chart", "bar", labels, [
+          { label: "Rain probability %", data: weather.forecast.map((d: any) => d.rainProbabilityPct), backgroundColor: "#16a34acc", borderRadius: 8 },
+        ]);
+
+        resultsEl?.classList.add("grid");
+        resultsEl?.classList.remove("hidden");
+      } catch (err) {
+        showToast("Could not fetch weather data. Please try again.", "error");
+      } finally {
+        loadingEl?.classList.remove("grid");
+        loadingEl?.classList.add("hidden");
+      }
+    });
+  </script>
+</BaseLayout>

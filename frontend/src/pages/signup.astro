@@ -1,0 +1,6 @@
+---
+// Sign-up and log-in are the same phone+OTP flow now (Firebase Phone Auth
+// creates the account on first verification) — send anyone who lands here
+// straight to /login.
+return Astro.redirect("/login", 302);
+---

@@ -1,0 +1,479 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Icon from "@/components/Icon.astro";
+import { INDIAN_STATES } from "@/utils/constants";
+---
+
+<BaseLayout title="Crop Recommendation">
+  <div class="mx-auto max-w-2xl">
+    <div class="mb-6 text-center">
+      <h1 class="section-heading" data-i18n="wizard.heading">Crop Recommendation</h1>
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400" data-i18n="wizard.subheading">
+        Answer a few simple questions — we'll suggest the best crops for your land.
+      </p>
+    </div>
+
+    <!-- Progress dots -->
+    <div id="wizard-progress" class="mb-6 flex items-center justify-center gap-2"></div>
+    <p id="wizard-step-label" class="mb-4 text-center text-xs font-semibold uppercase tracking-wide text-slate-400"></p>
+
+    <div id="wizard" class="glass-card p-6 sm:p-8">
+      <!-- Step 1: Location -->
+      <div data-step="1" class="grid gap-5">
+        <p class="flex items-center justify-center gap-2 text-center text-xl font-bold text-slate-900 dark:text-white">
+          <Icon name="map-pin" class="h-6 w-6 text-kisan-600 dark:text-kisan-400" />
+          <span data-i18n="wizard.step1.question">Where is your farm?</span>
+        </p>
+
+        <button
+          type="button"
+          id="wizard-use-location-btn"
+          class="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-kisan-400/60 bg-kisan-50/60 px-4 py-4 text-base font-semibold text-kisan-700 transition-colors hover:bg-kisan-50 dark:border-kisan-700/50 dark:bg-kisan-950/20 dark:text-kisan-300"
+        >
+          <Icon name="map-pin" class="h-5 w-5" />
+          <span data-i18n="common.useMyLocation">Use My Location</span>
+        </button>
+        <p id="wizard-location-status" class="hidden text-center text-xs font-medium text-slate-500 dark:text-slate-400"></p>
+
+        <details class="text-center">
+          <summary class="cursor-pointer text-sm font-medium text-slate-400" data-i18n="common.enterManually">Enter manually</summary>
+          <div class="mt-4 grid gap-4 text-left">
+            <label class="grid gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+              <span data-i18n="wizard.step1.state">State</span>
+              <select id="wizard-state" class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-slate-800 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white">
+                <option value="" disabled selected>Select state</option>
+                {INDIAN_STATES.map((state) => <option value={state}>{state}</option>)}
+              </select>
+            </label>
+            <label class="grid gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+              <span data-i18n="wizard.step1.district">District</span>
+              <input id="wizard-district" placeholder="e.g. Guntur" class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-slate-800 placeholder:text-slate-400 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white" />
+            </label>
+            <label class="grid gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+              <span data-i18n="wizard.step1.village">Village</span> <span class="font-normal text-slate-400" data-i18n="common.optional">(optional)</span>
+              <input id="wizard-village" placeholder="e.g. Pedapalem" class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-slate-800 placeholder:text-slate-400 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white" />
+            </label>
+          </div>
+        </details>
+
+        <p id="wizard-location-summary" class="hidden text-center text-sm font-semibold text-kisan-700 dark:text-kisan-300"></p>
+      </div>
+
+      <!-- Step 2: Land area -->
+      <div data-step="2" class="hidden grid gap-6">
+        <p class="flex items-center justify-center gap-2 text-center text-xl font-bold text-slate-900 dark:text-white">
+          <Icon name="wheat" class="h-6 w-6 text-kisan-600 dark:text-kisan-400" />
+          <span data-i18n="wizard.step2.question">How much land do you have?</span>
+        </p>
+
+        <div class="flex flex-col items-center gap-4">
+          <p class="text-5xl font-extrabold text-kisan-600 dark:text-kisan-400">
+            <span id="land-area-value">2</span>
+            <span class="text-2xl font-semibold text-slate-400" data-i18n="wizard.step2.unit">acres</span>
+          </p>
+          <div class="flex w-full items-center gap-3">
+            <button type="button" id="land-area-minus" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-kisan-100 text-xl font-bold text-kisan-700 dark:bg-kisan-900/40 dark:text-kisan-300">−</button>
+            <input id="land-area-slider" type="range" min="0.25" max="25" step="0.25" value="2" class="h-2 w-full cursor-pointer appearance-none rounded-full bg-kisan-200 accent-kisan-600 dark:bg-kisan-900" />
+            <button type="button" id="land-area-plus" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-kisan-100 text-xl font-bold text-kisan-700 dark:bg-kisan-900/40 dark:text-kisan-300">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Season -->
+      <div data-step="3" class="hidden grid gap-5">
+        <p class="flex items-center justify-center gap-2 text-center text-xl font-bold text-slate-900 dark:text-white">
+          <Icon name="calendar" class="h-6 w-6 text-kisan-600 dark:text-kisan-400" />
+          <span data-i18n="wizard.step3.question">Which season are you planting for?</span>
+        </p>
+        <div class="grid gap-3 sm:grid-cols-3" id="season-options">
+          <button type="button" data-season="kharif" class="season-option flex flex-col items-center gap-1 rounded-2xl border-2 border-slate-200 p-4 transition-colors dark:border-white/10">
+            <Icon name="cloud-rain" class="h-8 w-8 text-sky-500" />
+            <span class="font-bold text-slate-800 dark:text-slate-100" data-i18n="season.kharif">Kharif</span>
+            <span class="text-xs text-slate-400" data-i18n="season.kharifRange">Jun - Oct</span>
+          </button>
+          <button type="button" data-season="rabi" class="season-option flex flex-col items-center gap-1 rounded-2xl border-2 border-slate-200 p-4 transition-colors dark:border-white/10">
+            <Icon name="snowflake" class="h-8 w-8 text-sky-400" />
+            <span class="font-bold text-slate-800 dark:text-slate-100" data-i18n="season.rabi">Rabi</span>
+            <span class="text-xs text-slate-400" data-i18n="season.rabiRange">Nov - Mar</span>
+          </button>
+          <button type="button" data-season="zaid" class="season-option flex flex-col items-center gap-1 rounded-2xl border-2 border-slate-200 p-4 transition-colors dark:border-white/10">
+            <Icon name="sun" class="h-8 w-8 text-amber-500" />
+            <span class="font-bold text-slate-800 dark:text-slate-100" data-i18n="season.zaid">Zaid</span>
+            <span class="text-xs text-slate-400" data-i18n="season.zaidRange">Apr - Jun</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 4: Crop preference -->
+      <div data-step="4" class="hidden grid gap-5">
+        <p class="flex items-center justify-center gap-2 text-center text-xl font-bold text-slate-900 dark:text-white">
+          <Icon name="leaf" class="h-6 w-6 text-kisan-600 dark:text-kisan-400" />
+          <span data-i18n="wizard.step4.question">Do you have a crop in mind?</span>
+        </p>
+        <div id="crop-options" class="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
+          <div class="skeleton h-16"></div>
+          <div class="skeleton h-16"></div>
+          <div class="skeleton h-16"></div>
+          <div class="skeleton h-16"></div>
+        </div>
+      </div>
+
+      <!-- Step 5: Review -->
+      <div data-step="5" class="hidden grid gap-5">
+        <p class="flex items-center justify-center gap-2 text-center text-xl font-bold text-slate-900 dark:text-white">
+          <Icon name="check-circle" class="h-6 w-6 text-kisan-600 dark:text-kisan-400" />
+          <span data-i18n="wizard.step5.question">Review your answers</span>
+        </p>
+        <div id="review-summary" class="grid gap-2 text-sm"></div>
+        <button type="button" id="wizard-submit-btn" class="btn-primary justify-center !py-3.5 text-base">
+          <Icon name="sparkles" class="h-4 w-4" /> <span data-i18n="wizard.step5.submit">Get My Recommendation</span>
+        </button>
+      </div>
+
+      <!-- Footer nav -->
+      <div class="mt-8 flex items-center justify-between gap-3">
+        <button type="button" id="wizard-back-btn" class="btn-ghost hidden">
+          <Icon name="chevron-right" class="h-4 w-4 rotate-180" /> <span data-i18n="common.back">Back</span>
+        </button>
+        <div class="flex-1"></div>
+        <button type="button" id="wizard-next-btn" class="btn-primary">
+          <span data-i18n="common.next">Next</span> <Icon name="chevron-right" class="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+
+    <div id="crop-loading" class="mt-6 hidden grid gap-4 sm:grid-cols-3">
+      <div class="skeleton h-48"></div>
+      <div class="skeleton h-48"></div>
+      <div class="skeleton h-48"></div>
+    </div>
+
+    <div id="crop-results" class="mt-8 hidden grid gap-6 animate-slide-up">
+      <div class="glass-card border border-kisan-200/60 p-5 dark:border-kisan-800/40">
+        <div class="flex items-center justify-between gap-3">
+          <p class="flex items-center gap-2 text-sm font-semibold text-kisan-700 dark:text-kisan-300">
+            <Icon name="sparkles" class="h-4 w-4" /> AI Summary
+          </p>
+          <span id="crop-overall-confidence" class="stat-pill"></span>
+        </div>
+        <p id="crop-ai-summary" class="mt-2 text-sm text-slate-700 dark:text-slate-200"></p>
+      </div>
+
+      <div id="crop-cards" class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"></div>
+
+      <button type="button" id="wizard-restart-btn" class="btn-secondary justify-self-center">Start Over</button>
+    </div>
+  </div>
+
+  <template id="crop-card-template">
+    <div class="glass-card p-5">
+      <div class="flex items-start justify-between gap-2">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white" data-field="cropName"></h3>
+        <span class="rounded-full px-2.5 py-1 text-xs font-semibold" data-field="riskBadge"></span>
+      </div>
+      <div class="mt-3 grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <p class="text-xs text-slate-400">Expected Yield</p>
+          <p class="font-semibold text-slate-800 dark:text-slate-100" data-field="yield"></p>
+        </div>
+        <div>
+          <p class="text-xs text-slate-400">Water Requirement</p>
+          <p class="font-semibold text-slate-800 dark:text-slate-100" data-field="water"></p>
+        </div>
+      </div>
+      <span class="mt-3 inline-block stat-pill" data-field="confidence"></span>
+      <ul class="mt-3 grid gap-1.5 text-sm text-slate-600 dark:text-slate-300" data-field="reasons"></ul>
+    </div>
+  </template>
+
+  <script>
+    import { api } from "@/services/api";
+    import { showToast } from "@/utils/toast";
+    import { RISK_COLORS } from "@/utils/constants";
+    import { detectLocation } from "@/utils/geolocate";
+    import { t } from "@/utils/i18n";
+    import { cropCategoryIcon, svgIcon } from "@/utils/icons";
+    import type { CropReference, RecommendedCrop, Season } from "@/types";
+
+    const TOTAL_STEPS = 5;
+    let currentStep = 1;
+
+    const state = {
+      farmState: "",
+      district: "",
+      village: "",
+      landAreaAcres: 2,
+      season: "" as Season | "",
+      cropPreference: "" as string | undefined,
+    };
+
+    const progressEl = document.getElementById("wizard-progress");
+    const stepLabelEl = document.getElementById("wizard-step-label");
+    const backBtn = document.getElementById("wizard-back-btn");
+    const nextBtn = document.getElementById("wizard-next-btn");
+    const wizardEl = document.getElementById("wizard");
+
+    function renderProgress() {
+      if (!progressEl) return;
+      progressEl.innerHTML = "";
+      for (let i = 1; i <= TOTAL_STEPS; i++) {
+        const dot = document.createElement("span");
+        dot.className = `h-2.5 rounded-full transition-all ${
+          i === currentStep ? "w-8 bg-kisan-600" : i < currentStep ? "w-2.5 bg-kisan-400" : "w-2.5 bg-slate-200 dark:bg-slate-700"
+        }`;
+        progressEl.appendChild(dot);
+      }
+      if (stepLabelEl) stepLabelEl.textContent = `${t("common.stepLabel")} ${currentStep} ${t("common.of")} ${TOTAL_STEPS}`;
+    }
+
+    function showStep(step: number) {
+      currentStep = step;
+      document.querySelectorAll<HTMLElement>("[data-step]").forEach((el) => {
+        el.classList.toggle("hidden", Number(el.dataset.step) !== step);
+      });
+      backBtn?.classList.toggle("hidden", step === 1);
+      nextBtn?.classList.toggle("hidden", step === TOTAL_STEPS);
+      renderProgress();
+
+      if (step === 4) loadCropOptions();
+      if (step === 5) renderReview();
+    }
+
+    function validateStep(step: number): boolean {
+      if (step === 1) {
+        const stateEl = document.getElementById("wizard-state") as HTMLSelectElement;
+        const districtEl = document.getElementById("wizard-district") as HTMLInputElement;
+        state.farmState = stateEl.value;
+        state.district = districtEl.value.trim();
+        state.village = (document.getElementById("wizard-village") as HTMLInputElement).value.trim();
+
+        if (!state.farmState || !state.district) {
+          showToast("Please choose your location", "info");
+          return false;
+        }
+      }
+      if (step === 3 && !state.season) {
+        showToast("Please choose a season", "info");
+        return false;
+      }
+      return true;
+    }
+
+    backBtn?.addEventListener("click", () => showStep(Math.max(1, currentStep - 1)));
+    nextBtn?.addEventListener("click", () => {
+      if (!validateStep(currentStep)) return;
+      showStep(Math.min(TOTAL_STEPS, currentStep + 1));
+    });
+
+    // ---- Step 1: location ----
+    const useLocationBtn = document.getElementById("wizard-use-location-btn") as HTMLButtonElement | null;
+    const locationStatusEl = document.getElementById("wizard-location-status");
+    const locationSummaryEl = document.getElementById("wizard-location-summary");
+
+    useLocationBtn?.addEventListener("click", async () => {
+      useLocationBtn.disabled = true;
+      if (locationStatusEl) {
+        locationStatusEl.textContent = t("common.detectingLocation");
+        locationStatusEl.classList.remove("hidden");
+      }
+      try {
+        const detected = await detectLocation();
+        state.farmState = detected.state;
+        state.district = detected.district;
+
+        const stateEl = document.getElementById("wizard-state") as HTMLSelectElement;
+        const match = Array.from(stateEl.options).find((o) => o.value.toLowerCase() === detected.state.toLowerCase());
+        stateEl.value = match ? match.value : detected.state;
+        (document.getElementById("wizard-district") as HTMLInputElement).value = detected.district;
+
+        locationStatusEl?.classList.add("hidden");
+        if (locationSummaryEl) {
+          const label = detected.precise ? `${detected.district}, ${detected.state}` : `Near ${detected.state} (approximate)`;
+          locationSummaryEl.innerHTML = `<span class="mr-1 inline-flex align-middle">${svgIcon("map-pin", "h-4 w-4")}</span>${label}`;
+          locationSummaryEl.classList.remove("hidden");
+        }
+      } catch (err) {
+        locationStatusEl?.classList.add("hidden");
+        showToast((err as Error).message, "error");
+      } finally {
+        useLocationBtn.disabled = false;
+      }
+    });
+
+    // ---- Step 2: land area slider ----
+    const slider = document.getElementById("land-area-slider") as HTMLInputElement;
+    const landValueEl = document.getElementById("land-area-value")!;
+
+    function updateLandArea(value: number) {
+      const clamped = Math.max(0.25, Math.min(25, value));
+      state.landAreaAcres = clamped;
+      slider.value = String(clamped);
+      landValueEl.textContent = clamped % 1 === 0 ? String(clamped) : clamped.toFixed(2);
+    }
+
+    slider.addEventListener("input", () => updateLandArea(Number(slider.value)));
+    document.getElementById("land-area-minus")?.addEventListener("click", () => updateLandArea(state.landAreaAcres - 0.25));
+    document.getElementById("land-area-plus")?.addEventListener("click", () => updateLandArea(state.landAreaAcres + 0.25));
+
+    // ---- Step 3: season ----
+    document.querySelectorAll<HTMLButtonElement>(".season-option").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        state.season = btn.dataset.season as Season;
+        document.querySelectorAll<HTMLButtonElement>(".season-option").forEach((b) => {
+          b.classList.toggle("border-kisan-600", b === btn);
+          b.classList.toggle("bg-kisan-50", b === btn);
+          b.classList.toggle("dark:bg-kisan-950/30", b === btn);
+        });
+      });
+    });
+
+    // ---- Step 4: crop preference ----
+    let cropOptionsLoaded = false;
+    async function loadCropOptions() {
+      if (cropOptionsLoaded) return;
+      const container = document.getElementById("crop-options");
+      if (!container) return;
+
+      try {
+        const crops = await api.getCrops(state.season || undefined);
+        container.innerHTML = "";
+
+        const noPrefBtn = document.createElement("button");
+        noPrefBtn.type = "button";
+        noPrefBtn.className = "crop-option flex flex-col items-center gap-1 rounded-2xl border-2 border-kisan-600 bg-kisan-50 p-3 text-center dark:bg-kisan-950/30";
+        noPrefBtn.innerHTML = `<span class="text-kisan-600 dark:text-kisan-400">${svgIcon("sparkles", "h-6 w-6")}</span><span class="text-[11px] font-semibold leading-tight text-slate-700 dark:text-slate-200">${t("wizard.step4.noPreference")}</span>`;
+        noPrefBtn.dataset.crop = "";
+        container.appendChild(noPrefBtn);
+
+        crops.slice(0, 11).forEach((crop: CropReference) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "crop-option flex flex-col items-center gap-1 rounded-2xl border-2 border-slate-200 p-3 text-center dark:border-white/10";
+          btn.dataset.crop = crop.name;
+          btn.innerHTML = `<span class="text-slate-500 dark:text-slate-400">${cropCategoryIcon(crop.category, "h-6 w-6")}</span><span class="text-[11px] font-semibold leading-tight text-slate-700 dark:text-slate-200">${crop.name}</span>`;
+          container.appendChild(btn);
+        });
+
+        selectCropOption(container.querySelector<HTMLButtonElement>("[data-crop='']"));
+        container.querySelectorAll<HTMLButtonElement>(".crop-option").forEach((btn) => {
+          btn.addEventListener("click", () => selectCropOption(btn));
+        });
+
+        cropOptionsLoaded = true;
+      } catch {
+        container.innerHTML = `<p class="col-span-full text-center text-sm text-slate-400">Could not load crop list — you can still continue.</p>`;
+      }
+    }
+
+    function selectCropOption(selected: HTMLButtonElement | null) {
+      if (!selected) return;
+      state.cropPreference = selected.dataset.crop || undefined;
+      document.querySelectorAll<HTMLButtonElement>(".crop-option").forEach((b) => {
+        const isSelected = b === selected;
+        b.classList.toggle("border-kisan-600", isSelected);
+        b.classList.toggle("bg-kisan-50", isSelected);
+        b.classList.toggle("dark:bg-kisan-950/30", isSelected);
+        b.classList.toggle("border-slate-200", !isSelected);
+        b.classList.toggle("dark:border-white/10", !isSelected);
+      });
+    }
+
+    // ---- Step 5: review ----
+    function renderReview() {
+      const el = document.getElementById("review-summary");
+      if (!el) return;
+      const rows = [
+        [t("wizard.step1.question"), `${state.district}, ${state.farmState}${state.village ? ` (${state.village})` : ""}`],
+        [t("wizard.step2.question"), `${state.landAreaAcres} ${t("wizard.step2.unit")}`],
+        [t("wizard.step3.question"), t(`season.${state.season}`)],
+        [t("wizard.step4.question"), state.cropPreference || t("wizard.step4.noPreference")],
+      ];
+      el.innerHTML = rows
+        .map(
+          ([label, value]) =>
+            `<div class="glass-panel flex items-center justify-between gap-3 p-3"><span class="text-slate-500 dark:text-slate-400">${label}</span><span class="font-semibold text-slate-800 dark:text-slate-100">${value}</span></div>`
+        )
+        .join("");
+    }
+
+    // ---- Submit ----
+    const loadingEl = document.getElementById("crop-loading");
+    const resultsEl = document.getElementById("crop-results");
+    const cardsEl = document.getElementById("crop-cards");
+    const template = document.getElementById("crop-card-template") as HTMLTemplateElement | null;
+
+    function renderCrop(crop: RecommendedCrop) {
+      if (!template || !cardsEl) return;
+      const node = template.content.cloneNode(true) as DocumentFragment;
+      (node.querySelector('[data-field="cropName"]') as HTMLElement).textContent = crop.cropName;
+
+      const riskBadge = node.querySelector('[data-field="riskBadge"]') as HTMLElement;
+      riskBadge.textContent = `${crop.riskLevel} risk`;
+      riskBadge.className = `rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${RISK_COLORS[crop.riskLevel] ?? ""}`;
+
+      (node.querySelector('[data-field="yield"]') as HTMLElement).textContent = `${crop.expectedYieldQuintalPerAcre} qtl/acre`;
+      (node.querySelector('[data-field="water"]') as HTMLElement).textContent = `${crop.waterRequirementMm} mm`;
+      (node.querySelector('[data-field="confidence"]') as HTMLElement).textContent = `${crop.confidencePct}% confidence`;
+
+      const reasonsEl = node.querySelector('[data-field="reasons"]') as HTMLElement;
+      crop.reasons.forEach((reason) => {
+        const li = document.createElement("li");
+        li.className = "flex gap-2";
+        li.innerHTML = `<span class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-kisan-500"></span><span>${reason}</span>`;
+        reasonsEl.appendChild(li);
+      });
+
+      cardsEl.appendChild(node);
+    }
+
+    document.getElementById("wizard-submit-btn")?.addEventListener("click", async () => {
+      wizardEl?.classList.add("hidden");
+      document.getElementById("wizard-progress")?.classList.add("hidden");
+      stepLabelEl?.classList.add("hidden");
+      resultsEl?.classList.add("hidden");
+      loadingEl?.classList.remove("hidden");
+
+      try {
+        const result = await api.recommendCrops({
+          state: state.farmState,
+          district: state.district,
+          village: state.village || undefined,
+          landAreaAcres: state.landAreaAcres,
+          season: state.season as Season,
+          cropPreference: state.cropPreference,
+        });
+
+        const summaryEl = document.getElementById("crop-ai-summary");
+        const confEl = document.getElementById("crop-overall-confidence");
+        if (summaryEl) summaryEl.textContent = result.aiSummary;
+        if (confEl) confEl.textContent = `${result.confidencePct}% overall confidence`;
+
+        if (cardsEl) cardsEl.innerHTML = "";
+        result.recommendations.forEach(renderCrop);
+
+        resultsEl?.classList.remove("hidden");
+      } catch (err) {
+        showToast("Could not generate recommendations. Please try again.", "error");
+        wizardEl?.classList.remove("hidden");
+        document.getElementById("wizard-progress")?.classList.remove("hidden");
+        stepLabelEl?.classList.remove("hidden");
+      } finally {
+        loadingEl?.classList.add("hidden");
+      }
+    });
+
+    document.getElementById("wizard-restart-btn")?.addEventListener("click", () => {
+      resultsEl?.classList.add("hidden");
+      wizardEl?.classList.remove("hidden");
+      document.getElementById("wizard-progress")?.classList.remove("hidden");
+      stepLabelEl?.classList.remove("hidden");
+      showStep(1);
+    });
+
+    renderProgress();
+  </script>
+
+  <script>
+    import "@/utils/i18n";
+  </script>
+</BaseLayout>

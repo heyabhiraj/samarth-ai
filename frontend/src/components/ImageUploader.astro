@@ -1,0 +1,156 @@
+---
+import Icon from "@/components/Icon.astro";
+---
+
+<div class="grid gap-6">
+  <form id="disease-form" class="glass-card grid gap-5 p-6 sm:p-8">
+    <label
+      id="drop-zone"
+      for="disease-image-input"
+      class="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-kisan-300/60 bg-kisan-50/40 p-10 text-center transition-colors hover:bg-kisan-50/70 dark:border-kisan-700/40 dark:bg-kisan-950/20"
+    >
+      <img id="image-preview" class="hidden max-h-56 rounded-xl object-cover shadow-md" alt="Selected crop image preview" />
+      <div id="drop-zone-placeholder" class="flex flex-col items-center gap-2">
+        <span class="flex h-14 w-14 items-center justify-center rounded-full bg-kisan-100 text-kisan-700 dark:bg-kisan-900/40 dark:text-kisan-300">
+          <Icon name="camera" class="h-7 w-7" />
+        </span>
+        <p class="font-semibold text-slate-700 dark:text-slate-200">Tap to take or upload a photo</p>
+        <p class="text-xs text-slate-400">Focus clearly on the affected leaf or plant part · JPG, PNG, WEBP up to 8MB</p>
+      </div>
+      <input id="disease-image-input" name="image" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" class="hidden" />
+    </label>
+
+    <label class="grid gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+      Crop name <span class="font-normal text-slate-400">(optional, improves accuracy)</span>
+      <input
+        id="disease-crop-name"
+        name="cropName"
+        placeholder="e.g. Tomato, Cotton, Rice"
+        class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-slate-800 placeholder:text-slate-400 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white"
+      />
+    </label>
+
+    <button type="submit" id="disease-submit-btn" class="btn-primary" disabled>
+      <Icon name="upload" class="h-4 w-4" />
+      <span id="disease-submit-label">Analyze Crop Image</span>
+    </button>
+  </form>
+
+  <div id="disease-loading" class="hidden glass-card flex items-center gap-3 p-6">
+    <Icon name="loader" class="h-5 w-5 animate-spin text-kisan-600" />
+    <p class="text-sm font-medium text-slate-600 dark:text-slate-300">Analyzing image with Gemini Vision...</p>
+  </div>
+
+  <div id="disease-result" class="hidden glass-card grid gap-5 p-6 sm:p-8 animate-slide-up">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span id="disease-status-icon" class="flex h-10 w-10 items-center justify-center rounded-2xl"></span>
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Diagnosis</p>
+          <p id="disease-name" class="text-lg font-bold text-slate-900 dark:text-white"></p>
+        </div>
+      </div>
+      <span id="disease-confidence" class="stat-pill"></span>
+    </div>
+
+    <p id="disease-reasoning" class="text-sm text-slate-600 dark:text-slate-300"></p>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Treatment</p>
+        <ul id="disease-treatment" class="grid gap-1.5 text-sm text-slate-700 dark:text-slate-200"></ul>
+      </div>
+      <div>
+        <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Fertilizer</p>
+        <ul id="disease-fertilizer" class="grid gap-1.5 text-sm text-slate-700 dark:text-slate-200"></ul>
+      </div>
+    </div>
+
+    <div class="glass-panel border border-kisan-200/60 p-4 dark:border-kisan-800/40">
+      <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-kisan-600 dark:text-kisan-400">Expert Recommendation</p>
+      <p id="disease-expert" class="text-sm font-medium text-slate-800 dark:text-slate-100"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { api } from "@/services/api";
+  import { showToast } from "@/utils/toast";
+  import { svgIcon } from "@/utils/icons";
+
+  const form = document.getElementById("disease-form") as HTMLFormElement | null;
+  const input = document.getElementById("disease-image-input") as HTMLInputElement | null;
+  const preview = document.getElementById("image-preview") as HTMLImageElement | null;
+  const placeholder = document.getElementById("drop-zone-placeholder");
+  const submitBtn = document.getElementById("disease-submit-btn") as HTMLButtonElement | null;
+  const cropNameInput = document.getElementById("disease-crop-name") as HTMLInputElement | null;
+  const loadingEl = document.getElementById("disease-loading");
+  const resultEl = document.getElementById("disease-result");
+
+  let selectedFile: File | null = null;
+
+  input?.addEventListener("change", () => {
+    const file = input.files?.[0];
+    if (!file) return;
+    selectedFile = file;
+    if (preview) {
+      preview.src = URL.createObjectURL(file);
+      preview.classList.remove("hidden");
+    }
+    placeholder?.classList.add("hidden");
+    submitBtn?.removeAttribute("disabled");
+  });
+
+  function renderList(id: string, items: string[]) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = "";
+    items.forEach((item) => {
+      const li = document.createElement("li");
+      li.className = "flex gap-2";
+      li.innerHTML = `<span class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-kisan-500"></span><span>${item}</span>`;
+      el.appendChild(li);
+    });
+  }
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!selectedFile) return;
+
+    resultEl?.classList.add("hidden");
+    loadingEl?.classList.remove("hidden");
+    submitBtn?.setAttribute("disabled", "true");
+
+    try {
+      const result = await api.detectDisease(selectedFile, cropNameInput?.value || undefined);
+
+      const nameEl = document.getElementById("disease-name");
+      const confidenceEl = document.getElementById("disease-confidence");
+      const reasoningEl = document.getElementById("disease-reasoning");
+      const expertEl = document.getElementById("disease-expert");
+      const statusIcon = document.getElementById("disease-status-icon");
+
+      if (nameEl) nameEl.textContent = result.disease;
+      if (confidenceEl) confidenceEl.textContent = `${result.confidencePct}% confidence`;
+      if (reasoningEl) reasoningEl.textContent = result.reasoning;
+      if (expertEl) expertEl.textContent = result.expertRecommendation;
+      if (statusIcon) {
+        statusIcon.className = `flex h-10 w-10 items-center justify-center rounded-2xl ${
+          result.isHealthy ? "bg-kisan-100 text-kisan-700 dark:bg-kisan-900/40 dark:text-kisan-300" : "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300"
+        }`;
+        statusIcon.innerHTML = svgIcon(result.isHealthy ? "check-circle" : "alert-triangle", "h-5 w-5");
+      }
+
+      renderList("disease-treatment", result.treatment);
+      renderList("disease-fertilizer", result.fertilizerRecommendation);
+
+      resultEl?.classList.remove("hidden");
+      showToast("Analysis complete", "success");
+    } catch (err) {
+      showToast("Could not analyze the image. Please try again.", "error");
+    } finally {
+      loadingEl?.classList.add("hidden");
+      submitBtn?.removeAttribute("disabled");
+    }
+  });
+</script>

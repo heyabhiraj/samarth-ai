@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.astro/
+.wrangler/
+.env
+.env.local
+.dev.vars
+*.log
+.DS_Store
+frontend/.vercel
+backend/.wrangler

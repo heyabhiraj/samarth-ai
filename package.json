@@ -1,0 +1,17 @@
+{
+  "name": "samarth-kisan-ai",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Samarth Kisan AI - Smart Water, Crop & Advisory System for Indian farmers",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build:backend": "npm run build --workspace=backend",
+    "deploy:backend": "npm run deploy --workspace=backend"
+  }
+}

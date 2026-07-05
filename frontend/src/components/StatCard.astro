@@ -1,0 +1,31 @@
+---
+import Icon from "@/components/Icon.astro";
+
+interface Props {
+  label: string;
+  value: string;
+  sublabel?: string;
+  icon: Parameters<typeof Icon>[0]["name"];
+  accent?: "green" | "blue" | "amber" | "rose";
+}
+
+const { label, value, sublabel, icon, accent = "green" } = Astro.props;
+
+const accentClasses: Record<string, string> = {
+  green: "from-kisan-500 to-kisan-700",
+  blue: "from-sky-500 to-sky-700",
+  amber: "from-amber-500 to-amber-600",
+  rose: "from-rose-500 to-rose-600",
+};
+---
+
+<div class="glass-card flex items-center gap-4 p-4 sm:p-5">
+  <span class:list={["flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-md", accentClasses[accent]]}>
+    <Icon name={icon} class="h-5 w-5" />
+  </span>
+  <div class="min-w-0">
+    <p class="truncate text-xs font-medium text-slate-500 dark:text-slate-400">{label}</p>
+    <p class="truncate text-lg font-bold text-slate-900 dark:text-white">{value}</p>
+    {sublabel && <p class="truncate text-xs text-slate-400 dark:text-slate-500">{sublabel}</p>}
+  </div>
+</div>

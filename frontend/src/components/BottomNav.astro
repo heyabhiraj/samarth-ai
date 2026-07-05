@@ -1,0 +1,41 @@
+---
+import Icon from "@/components/Icon.astro";
+
+const navItems = [
+  { href: "/", label: "Home", icon: "home" as const, i18nKey: "nav.home" },
+  { href: "/dashboard", label: "Dashboard", icon: "dashboard" as const, i18nKey: "nav.dashboard" },
+  { href: "/crop-recommendation", label: "Advisory", icon: "sprout" as const, i18nKey: "nav.advisory" },
+  { href: "/disease-detection", label: "Scan", icon: "camera" as const, i18nKey: "nav.scan" },
+  { href: "/voice-assistant", label: "Voice", icon: "mic" as const, i18nKey: "nav.voice" },
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<nav class="fixed inset-x-0 bottom-0 z-40 border-t border-white/40 bg-white/80 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg dark:border-white/10 dark:bg-slate-950/80 lg:hidden">
+  <div class="mx-auto grid max-w-7xl grid-cols-5 px-2 py-1.5">
+    {navItems.map((item) => (
+      <a
+        href={item.href}
+        class:list={[
+          "flex flex-col items-center gap-0.5 rounded-xl py-1.5 text-[11px] font-medium transition-colors",
+          currentPath === item.href ? "text-kisan-600 dark:text-kisan-400" : "text-slate-500 dark:text-slate-400",
+        ]}
+      >
+        <span
+          class:list={[
+            "flex h-9 w-9 items-center justify-center rounded-full transition-colors",
+            currentPath === item.href ? "bg-kisan-100 dark:bg-kisan-900/40" : "",
+          ]}
+        >
+          <Icon name={item.icon} class="h-5 w-5" />
+        </span>
+        <span data-i18n={item.i18nKey}>{item.label}</span>
+      </a>
+    ))}
+  </div>
+</nav>
+
+<script>
+  import "@/utils/i18n";
+</script>

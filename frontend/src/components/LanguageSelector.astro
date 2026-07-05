@@ -1,0 +1,19 @@
+---
+import { LANGUAGES } from "@/utils/constants";
+
+interface Props {
+  id?: string;
+}
+
+const { id = "language-select" } = Astro.props;
+---
+
+<select
+  id={id}
+  data-language-select
+  class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-sm font-medium text-slate-800 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white"
+>
+  {LANGUAGES.map((lang) => (
+    <option value={lang.code}>{lang.nativeLabel} ({lang.label})</option>
+  ))}
+</select>

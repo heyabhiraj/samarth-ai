@@ -1,0 +1,74 @@
+---
+import Icon from "@/components/Icon.astro";
+import LanguageSwitcher from "@/components/LanguageSwitcher.astro";
+
+const navItems = [
+  { href: "/", label: "Home", icon: "home" as const, i18nKey: "nav.home" },
+  { href: "/dashboard", label: "Dashboard", icon: "dashboard" as const, i18nKey: "nav.dashboard" },
+  { href: "/crop-recommendation", label: "Crop Advisory", icon: "sprout" as const, i18nKey: "nav.cropAdvisory" },
+  { href: "/weather", label: "Weather", icon: "cloud-rain" as const, i18nKey: "nav.weather" },
+  { href: "/groundwater", label: "Groundwater", icon: "droplets" as const, i18nKey: "nav.groundwater" },
+  { href: "/satellite", label: "Satellite", icon: "satellite" as const, i18nKey: "nav.satellite" },
+  { href: "/disease-detection", label: "Crop Health", icon: "camera" as const, i18nKey: "nav.cropHealth" },
+  { href: "/voice-assistant", label: "Voice Assistant", icon: "mic" as const, i18nKey: "nav.voiceAssistant" },
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<header class="sticky top-0 z-40 border-b border-white/40 bg-white/70 backdrop-blur-lg dark:border-white/10 dark:bg-slate-950/70">
+  <div class="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+    <a href="/" class="flex items-center gap-2">
+      <span class="flex h-9 w-9 items-center justify-center rounded-2xl bg-gradient-to-br from-kisan-500 to-kisan-700 text-white shadow-md shadow-kisan-600/30">
+        <Icon name="wheat" class="h-5 w-5" />
+      </span>
+      <span class="text-lg font-extrabold tracking-tight text-slate-900 dark:text-white">Samarth Kisan AI</span>
+    </a>
+
+    <nav class="hidden items-center gap-1 lg:flex">
+      {navItems.map((item) => (
+        <a
+          href={item.href}
+          class:list={[
+            "flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition-colors",
+            currentPath === item.href
+              ? "bg-kisan-600 text-white shadow-sm shadow-kisan-600/30"
+              : "text-slate-600 hover:bg-kisan-50 hover:text-kisan-700 dark:text-slate-300 dark:hover:bg-white/5",
+          ]}
+        >
+          <Icon name={item.icon} class="h-4 w-4" />
+          <span data-i18n={item.i18nKey}>{item.label}</span>
+        </a>
+      ))}
+    </nav>
+
+    <div class="flex items-center gap-2">
+      <a href="/dashboard#alerts" class="relative rounded-full p-2 text-slate-600 hover:bg-slate-900/5 dark:text-slate-300 dark:hover:bg-white/5" aria-label="Alerts">
+        <Icon name="bell" class="h-5 w-5" />
+        <span class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500"></span>
+      </a>
+      <LanguageSwitcher />
+      <button
+        data-theme-toggle
+        class="rounded-full p-2 text-slate-600 hover:bg-slate-900/5 dark:text-slate-300 dark:hover:bg-white/5"
+        aria-label="Toggle dark mode"
+      >
+        <Icon name="sun" class="h-5 w-5 dark:hidden" />
+        <Icon name="moon" class="hidden h-5 w-5 dark:block" />
+      </button>
+      <a
+        id="auth-nav-link"
+        href="/login"
+        class="flex items-center gap-1.5 rounded-full bg-kisan-600 px-3 py-2 text-sm font-medium text-white shadow-sm shadow-kisan-600/30 transition-colors hover:bg-kisan-700"
+      >
+        <Icon name="user" class="h-4 w-4" />
+        <span id="auth-nav-label" data-i18n="nav.login">Login</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<script>
+  import "@/utils/auth-nav";
+  import "@/utils/i18n";
+</script>

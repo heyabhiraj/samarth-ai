@@ -1,0 +1,21 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import VoiceAssistantWidget from "@/components/VoiceAssistantWidget.astro";
+---
+
+<BaseLayout title="Voice Assistant">
+  <div class="mx-auto max-w-xl">
+    <div class="mb-6 text-center">
+      <h1 class="section-heading" data-i18n="voice.heading">Voice Assistant</h1>
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400" data-i18n="voice.subheading">
+        Ask any farming question by voice or text.
+      </p>
+    </div>
+
+    <VoiceAssistantWidget />
+  </div>
+
+  <script>
+    import "@/utils/i18n";
+  </script>
+</BaseLayout>

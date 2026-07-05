@@ -1,0 +1,15 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ImageUploader from "@/components/ImageUploader.astro";
+---
+
+<BaseLayout title="Crop Disease Detection">
+  <div class="mb-6">
+    <h1 class="section-heading">Crop Disease Detection</h1>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      Upload a photo of an affected leaf or plant — Gemini Vision will diagnose the issue and suggest treatment.
+    </p>
+  </div>
+
+  <ImageUploader />
+</BaseLayout>

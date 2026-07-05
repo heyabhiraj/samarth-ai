@@ -1,0 +1,8 @@
+---
+interface Props {
+  class?: string;
+}
+const { class: className = "h-24 w-full" } = Astro.props;
+---
+
+<div class:list={["skeleton", className]}></div>

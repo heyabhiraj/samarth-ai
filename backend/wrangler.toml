@@ -1,0 +1,36 @@
+name = "samarth-kisan-ai-backend"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+
+# Persistence lives on Google Cloud (Firestore + Cloud Storage), reached over
+# REST with a service account — see README "Google Cloud Setup". No D1/R2/KV
+# bindings are needed.
+
+[vars]
+GCP_PROJECT_ID = "your-gcp-project-id"
+GCS_BUCKET_NAME = "samarth-kisan-ai-images"
+GEMINI_TEXT_MODEL = "gemini-2.5-flash"
+GEMINI_VISION_MODEL = "gemini-2.5-flash"
+OPEN_METEO_BASE_URL = "https://api.open-meteo.com/v1"
+OPEN_METEO_GEOCODE_URL = "https://geocoding-api.open-meteo.com/v1"
+SOILGRIDS_BASE_URL = "https://rest.isric.org/soilgrids/v2.0"
+SMS_PROVIDER = "msg91"
+SMS_SENDER_ID = "KISANA"
+
+# Secrets (set via `wrangler secret put <NAME>`, do NOT put real values here):
+# GEMINI_API_KEY
+# GCP_SERVICE_ACCOUNT_EMAIL           e.g. samarth-kisan-ai@your-project.iam.gserviceaccount.com
+# GCP_SERVICE_ACCOUNT_PRIVATE_KEY     the "private_key" field from the service account JSON key
+# SENTINEL_HUB_CLIENT_ID
+# SENTINEL_HUB_CLIENT_SECRET
+# INDIA_WRIS_API_KEY
+# SMS_API_KEY
+#
+# No auth secret needed — Firebase Authentication ID tokens are verified with
+# Google's public keys (see src/services/firebaseAuthService.ts). Enable the
+# "Phone" sign-in provider for this project (GCP_PROJECT_ID above doubles as
+# the Firebase project ID) in the Firebase Console.

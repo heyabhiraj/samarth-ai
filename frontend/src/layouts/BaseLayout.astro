@@ -1,0 +1,45 @@
+---
+import Navbar from "@/components/Navbar.astro";
+import BottomNav from "@/components/BottomNav.astro";
+import FloatingActionButton from "@/components/FloatingActionButton.astro";
+import ToastContainer from "@/components/ToastContainer.astro";
+import "@/styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "AI-powered Smart Water, Crop & Advisory System for Indian farmers." } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#16a34a" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title} · Samarth Kisan AI</title>
+    <script is:inline>
+      const stored = localStorage.getItem("kisan-theme");
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      if (stored === "dark" || (!stored && prefersDark)) {
+        document.documentElement.classList.add("dark");
+      }
+    </script>
+  </head>
+  <body class="min-h-screen">
+    <Navbar />
+    <main class="mx-auto w-full max-w-7xl px-4 pb-28 pt-6 sm:px-6 sm:pb-16 lg:px-8">
+      <slot />
+    </main>
+    <BottomNav />
+    <FloatingActionButton />
+    <ToastContainer />
+    <script>
+      import "@/utils/theme-toggle";
+    </script>
+  </body>
+</html>

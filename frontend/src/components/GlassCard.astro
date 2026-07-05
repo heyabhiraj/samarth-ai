@@ -1,0 +1,12 @@
+---
+interface Props {
+  class?: string;
+  padded?: boolean;
+}
+
+const { class: className = "", padded = true } = Astro.props;
+---
+
+<div class:list={["glass-card animate-fade-in", padded ? "p-5 sm:p-6" : "", className]}>
+  <slot />
+</div>

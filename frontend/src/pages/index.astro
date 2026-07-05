@@ -1,0 +1,95 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Icon from "@/components/Icon.astro";
+import GlassCard from "@/components/GlassCard.astro";
+import TodayWeatherWidget from "@/components/TodayWeatherWidget.astro";
+
+const features = [
+  { href: "/crop-recommendation", icon: "sprout" as const, title: "Crop Recommendation", desc: "AI picks the best crops for your land using soil, weather & satellite data." },
+  { href: "/weather", icon: "cloud-rain" as const, title: "Weather Intelligence", desc: "7-day forecast with plain-language irrigation advice." },
+  { href: "/groundwater", icon: "droplets" as const, title: "Groundwater Insights", desc: "Know your water table depth and the best irrigation method." },
+  { href: "/satellite", icon: "satellite" as const, title: "Satellite Health Check", desc: "NDVI-based crop stress and vegetation health scoring." },
+  { href: "/disease-detection", icon: "camera" as const, title: "Disease Detection", desc: "Snap a photo, get instant diagnosis and treatment steps." },
+  { href: "/voice-assistant", icon: "mic" as const, title: "Voice Assistant", desc: "Ask questions in 9 Indian languages, get spoken answers." },
+];
+---
+
+<BaseLayout title="Home">
+  <section class="hero-gradient relative overflow-hidden rounded-[2.5rem] px-6 py-14 sm:px-12 sm:py-20">
+    <div class="relative z-10 mx-auto flex max-w-3xl flex-col items-center text-center">
+      <span class="stat-pill mb-4 flex animate-fade-in items-center gap-1.5">
+        <Icon name="wheat" class="h-3.5 w-3.5" />
+        <span data-i18n="home.heroTag">Smart Water, Crop &amp; Advisory System</span>
+      </span>
+      <h1 class="animate-fade-in text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-6xl">
+        Samarth Kisan <span class="bg-gradient-to-r from-kisan-600 to-kisan-400 bg-clip-text text-transparent">AI</span>
+      </h1>
+      <p class="mt-4 max-w-xl animate-fade-in text-lg text-slate-600 dark:text-slate-300" data-i18n="home.heroSubtitle">
+        AI-powered Smart Water, Crop &amp; Advisory System — helping every Indian farmer make confident, data-driven decisions.
+      </p>
+      <div class="mt-8 flex flex-wrap items-center justify-center gap-3 animate-slide-up">
+        <a href="/crop-recommendation" class="btn-primary">
+          <Icon name="sparkles" class="h-4 w-4" /> <span data-i18n="home.startAnalysis">Start Analysis</span>
+        </a>
+        <a href="/disease-detection" class="btn-secondary">
+          <Icon name="camera" class="h-4 w-4" /> <span data-i18n="home.uploadImage">Upload Crop Image</span>
+        </a>
+        <a href="/voice-assistant" class="btn-secondary">
+          <Icon name="mic" class="h-4 w-4" /> <span data-i18n="home.voiceAssistant">Voice Assistant</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="pointer-events-none absolute -bottom-10 -right-10 hidden text-kisan-500/20 sm:block" aria-hidden="true">
+      <Icon name="wheat" class="h-64 w-64 animate-float" />
+    </div>
+    <div class="pointer-events-none absolute -left-8 top-10 hidden text-kisan-600/10 sm:block" aria-hidden="true">
+      <Icon name="leaf" class="h-40 w-40 animate-float" />
+    </div>
+  </section>
+
+  <section class="mt-8 mx-auto max-w-xl">
+    <TodayWeatherWidget />
+  </section>
+
+  <section class="mt-14">
+    <div class="mb-6 flex items-end justify-between">
+      <h2 class="section-heading" data-i18n="home.featuresHeading">Everything a farmer needs, in one place</h2>
+    </div>
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {features.map((f) => (
+        <a href={f.href}>
+          <GlassCard class="h-full transition-transform hover:-translate-y-1 hover:shadow-xl">
+            <span class="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-kisan-500 to-kisan-700 text-white shadow-md">
+              <Icon name={f.icon} class="h-6 w-6" />
+            </span>
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white">{f.title}</h3>
+            <p class="mt-1.5 text-sm text-slate-500 dark:text-slate-400">{f.desc}</p>
+            <span class="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-kisan-600 dark:text-kisan-400">
+              Explore <Icon name="chevron-right" class="h-4 w-4" />
+            </span>
+          </GlassCard>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="mt-14 grid gap-5 sm:grid-cols-3">
+    <GlassCard class="text-center">
+      <p class="text-3xl font-extrabold text-kisan-600 dark:text-kisan-400">9</p>
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Indian languages supported</p>
+    </GlassCard>
+    <GlassCard class="text-center">
+      <p class="text-3xl font-extrabold text-kisan-600 dark:text-kisan-400">4</p>
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Live data sources fused by AI</p>
+    </GlassCard>
+    <GlassCard class="text-center">
+      <p class="text-3xl font-extrabold text-kisan-600 dark:text-kisan-400">24/7</p>
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Dry-spell &amp; disease alerts</p>
+    </GlassCard>
+  </section>
+
+  <script>
+    import "@/utils/i18n";
+  </script>
+</BaseLayout>

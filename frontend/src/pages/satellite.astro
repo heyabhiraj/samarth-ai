@@ -1,0 +1,107 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import LocationForm from "@/components/LocationForm.astro";
+import Icon from "@/components/Icon.astro";
+---
+
+<BaseLayout title="Satellite Dashboard">
+  <div class="mb-6">
+    <h1 class="section-heading">Satellite Dashboard</h1>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+      NDVI-based vegetation health and crop stress detection for your fields.
+    </p>
+  </div>
+
+  <LocationForm formId="satellite-form" submitLabel="Check Satellite Data" />
+
+  <div id="sat-loading" class="mt-6 hidden grid gap-4 sm:grid-cols-3">
+    <div class="skeleton h-60 sm:col-span-2"></div>
+    <div class="skeleton h-60"></div>
+  </div>
+
+  <div id="sat-results" class="mt-8 hidden grid gap-6 sm:grid-cols-3 animate-slide-up">
+    <div class="glass-card p-4 sm:col-span-2">
+      <p class="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">Field View</p>
+      <div id="sat-map-mount"></div>
+    </div>
+
+    <div class="grid gap-4">
+      <div class="glass-card p-5 text-center">
+        <p class="text-xs font-medium text-slate-500 dark:text-slate-400">NDVI</p>
+        <p id="sat-ndvi" class="mt-1 text-3xl font-extrabold text-kisan-600 dark:text-kisan-400"></p>
+      </div>
+      <div class="glass-card p-5 text-center">
+        <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Vegetation Health</p>
+        <p id="sat-health" class="mt-1 text-lg font-bold capitalize text-slate-900 dark:text-white"></p>
+      </div>
+      <div class="glass-card p-5">
+        <p class="mb-2 flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
+          <span>Health Score</span><span id="sat-score-label"></span>
+        </p>
+        <div class="h-3 w-full overflow-hidden rounded-full bg-slate-200/70 dark:bg-slate-700/50">
+          <div id="sat-score-bar" class="h-full rounded-full bg-gradient-to-r from-rose-500 via-amber-500 to-kisan-500 transition-all" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="sat-stress-banner" class="hidden glass-panel col-span-full flex items-center gap-3 border border-rose-400/50 bg-rose-50/80 p-4 dark:bg-rose-950/30">
+      <Icon name="alert-triangle" class="h-5 w-5 text-rose-600 dark:text-rose-300" />
+      <p class="text-sm font-medium text-rose-800 dark:text-rose-200">Crop stress detected in this area. Consider a field inspection and check irrigation adequacy.</p>
+    </div>
+  </div>
+
+  <script>
+    import { api } from "@/services/api";
+    import { showToast } from "@/utils/toast";
+
+    const form = document.getElementById("satellite-form") as HTMLFormElement | null;
+    const loadingEl = document.getElementById("sat-loading");
+    const resultsEl = document.getElementById("sat-results");
+    const mapMount = document.getElementById("sat-map-mount");
+
+    form?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const payload = {
+        state: String(formData.get("state") || ""),
+        district: String(formData.get("district") || ""),
+        village: (formData.get("village") as string) || undefined,
+      };
+
+      resultsEl?.classList.add("hidden");
+      loadingEl?.classList.remove("hidden");
+
+      try {
+        const data = await api.getSatellite(payload);
+
+        document.getElementById("sat-ndvi")!.textContent = data.ndvi.toFixed(2);
+        document.getElementById("sat-health")!.textContent = data.vegetationHealth;
+        document.getElementById("sat-score-label")!.textContent = `${data.healthScore}/100`;
+        (document.getElementById("sat-score-bar") as HTMLElement).style.width = `${data.healthScore}%`;
+
+        document.getElementById("sat-stress-banner")?.classList.toggle("hidden", !data.cropStressDetected);
+
+        if (mapMount) {
+          mapMount.innerHTML = "";
+          const { default: L } = await import("leaflet");
+          await import("leaflet/dist/leaflet.css");
+          const div = document.createElement("div");
+          div.style.height = "280px";
+          div.className = "w-full overflow-hidden rounded-2xl";
+          mapMount.appendChild(div);
+          const map = L.map(div, { attributionControl: false }).setView([data.location.latitude, data.location.longitude], 13);
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 18 }).addTo(map);
+          const color = data.ndvi > 0.5 ? "#16a34a" : data.ndvi > 0.3 ? "#f59e0b" : "#e11d48";
+          L.circle([data.location.latitude, data.location.longitude], { radius: 800, color, fillColor: color, fillOpacity: 0.25 }).addTo(map);
+          L.marker([data.location.latitude, data.location.longitude]).addTo(map).bindPopup(`NDVI: ${data.ndvi.toFixed(2)}`);
+        }
+
+        resultsEl?.classList.remove("hidden");
+      } catch (err) {
+        showToast("Could not fetch satellite data. Please try again.", "error");
+      } finally {
+        loadingEl?.classList.add("hidden");
+      }
+    });
+  </script>
+</BaseLayout>

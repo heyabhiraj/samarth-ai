@@ -1,0 +1,177 @@
+---
+import Icon from "@/components/Icon.astro";
+import LanguageSelector from "@/components/LanguageSelector.astro";
+---
+
+<div class="glass-card grid gap-6 p-6 sm:p-8" id="voice-widget">
+  <div class="flex flex-col items-center gap-3 text-center">
+    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Speak in your language</p>
+    <LanguageSelector id="voice-language" />
+  </div>
+
+  <div class="flex flex-col items-center gap-4">
+    <button
+      id="voice-mic-btn"
+      type="button"
+      class="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-kisan-500 to-kisan-700 text-white shadow-xl shadow-kisan-600/40 transition-transform hover:scale-105 active:scale-95"
+      aria-label="Start speaking"
+    >
+      <Icon name="mic" class="h-9 w-9" />
+      <span id="voice-pulse-ring" class="absolute inset-0 hidden animate-ping rounded-full bg-kisan-500/50"></span>
+    </button>
+    <p id="voice-status" class="text-sm font-medium text-slate-500 dark:text-slate-400" data-i18n="voice.tapToAsk">Tap to ask a question</p>
+  </div>
+
+  <div id="voice-transcript-wrap" class="hidden grid gap-2">
+    <p class="text-xs font-semibold uppercase tracking-wide text-slate-400" data-i18n="voice.youAsked">You asked</p>
+    <p id="voice-transcript" class="glass-panel p-3 text-sm text-slate-700 dark:text-slate-200"></p>
+  </div>
+
+  <div id="voice-answer-wrap" class="hidden grid gap-2">
+    <div class="flex items-center justify-between">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Samarth Kisan AI</p>
+      <button id="voice-replay-btn" type="button" class="btn-ghost !px-3 !py-1 text-xs">
+        <Icon name="volume" class="h-4 w-4" /> <span data-i18n="voice.replay">Replay</span>
+      </button>
+    </div>
+    <p id="voice-answer" class="glass-panel border border-kisan-200/60 p-4 text-sm font-medium text-slate-800 dark:border-kisan-800/40 dark:text-slate-100"></p>
+  </div>
+
+  <div class="grid gap-2">
+    <p class="text-xs font-semibold uppercase tracking-wide text-slate-400" data-i18n="voice.orType">Or type your question</p>
+    <form id="voice-text-form" class="flex gap-2">
+      <input
+        id="voice-text-input"
+        type="text"
+        placeholder="e.g. When should I water my cotton crop?"
+        class="flex-1 rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white"
+      />
+      <button type="submit" class="btn-primary !px-4">
+        <Icon name="send" class="h-4 w-4" />
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+  import "@/utils/i18n";
+</script>
+
+<script>
+  import { api } from "@/services/api";
+  import { LANGUAGES } from "@/utils/constants";
+  import { showToast } from "@/utils/toast";
+  import { waitForAuthInit } from "@/utils/firebase";
+  import { getUILanguage, t } from "@/utils/i18n";
+
+  const micBtn = document.getElementById("voice-mic-btn") as HTMLButtonElement | null;
+  const pulseRing = document.getElementById("voice-pulse-ring");
+  const statusEl = document.getElementById("voice-status");
+  const languageSelect = document.getElementById("voice-language") as HTMLSelectElement | null;
+  const transcriptWrap = document.getElementById("voice-transcript-wrap");
+  const transcriptEl = document.getElementById("voice-transcript");
+  const answerWrap = document.getElementById("voice-answer-wrap");
+  const answerEl = document.getElementById("voice-answer");
+  const replayBtn = document.getElementById("voice-replay-btn");
+  const textForm = document.getElementById("voice-text-form") as HTMLFormElement | null;
+  const textInput = document.getElementById("voice-text-input") as HTMLInputElement | null;
+
+  let lastAnswer = "";
+  let isListening = false;
+
+  // Default to the app's chosen display language (falls back to the saved
+  // account preference below, if the farmer is logged in and set one).
+  if (languageSelect) {
+    languageSelect.value = getUILanguage();
+  }
+
+  waitForAuthInit().then((user) => {
+    if (!user || !languageSelect) return;
+    api.profile
+      .get()
+      .then((farmer) => {
+        if (farmer.preferences.preferredLanguage) {
+          languageSelect.value = farmer.preferences.preferredLanguage;
+        }
+      })
+      .catch(() => {});
+  });
+
+  function speak(text: string, langCode: string) {
+    if (!("speechSynthesis" in window)) return;
+    const lang = LANGUAGES.find((l) => l.code === langCode)?.speechLocale ?? "en-IN";
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+  }
+
+  async function handleQuery(query: string) {
+    const language = (languageSelect?.value ?? "hi") as any;
+
+    if (transcriptEl) transcriptEl.textContent = query;
+    transcriptWrap?.classList.remove("hidden");
+    if (statusEl) statusEl.textContent = t("voice.thinking");
+
+    try {
+      const result = await api.askVoice({ query, language });
+      lastAnswer = result.answer;
+      if (answerEl) answerEl.textContent = result.answer;
+      answerWrap?.classList.remove("hidden");
+      if (statusEl) statusEl.textContent = t("voice.tapToAskAnother");
+      speak(result.answer, language);
+    } catch (err) {
+      showToast("Could not get an answer. Please try again.", "error");
+      if (statusEl) statusEl.textContent = t("voice.tapToAsk");
+    }
+  }
+
+  replayBtn?.addEventListener("click", () => {
+    if (lastAnswer) speak(lastAnswer, languageSelect?.value ?? "hi");
+  });
+
+  textForm?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const value = textInput?.value.trim();
+    if (value) {
+      handleQuery(value);
+      if (textInput) textInput.value = "";
+    }
+  });
+
+  const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+  micBtn?.addEventListener("click", () => {
+    if (!SpeechRecognitionCtor) {
+      showToast("Voice recognition is not supported on this browser. Please type your question instead.", "info");
+      return;
+    }
+
+    if (isListening) return;
+
+    const recognition = new SpeechRecognitionCtor();
+    recognition.lang = LANGUAGES.find((l) => l.code === languageSelect?.value)?.speechLocale ?? "hi-IN";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    isListening = true;
+    pulseRing?.classList.remove("hidden");
+    if (statusEl) statusEl.textContent = t("voice.listening");
+
+    recognition.onresult = (event: any) => {
+      const text = event.results[0][0].transcript;
+      handleQuery(text);
+    };
+
+    recognition.onerror = () => {
+      showToast("Could not hear you clearly. Please try again.", "error");
+    };
+
+    recognition.onend = () => {
+      isListening = false;
+      pulseRing?.classList.add("hidden");
+    };
+
+    recognition.start();
+  });
+</script>

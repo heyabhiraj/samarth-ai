@@ -1,0 +1,48 @@
+---
+import Icon from "@/components/Icon.astro";
+import { UI_LANGUAGES } from "@/i18n/translations";
+---
+
+<details id="language-switcher" class="relative">
+  <summary
+    class="flex list-none items-center justify-center rounded-full p-2 text-slate-600 hover:bg-slate-900/5 dark:text-slate-300 dark:hover:bg-white/5 [&::-webkit-details-marker]:hidden"
+    aria-label="Change language"
+  >
+    <Icon name="globe" class="h-5 w-5" />
+  </summary>
+  <div class="glass-card absolute right-0 z-50 mt-2 grid w-44 gap-1 p-2">
+    {UI_LANGUAGES.map((lang) => (
+      <button
+        type="button"
+        data-lang-option={lang.code}
+        class="flex items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-700 hover:bg-kisan-50 dark:text-slate-200 dark:hover:bg-white/5"
+      >
+        {lang.nativeLabel}
+      </button>
+    ))}
+  </div>
+</details>
+
+<script>
+  import { setUILanguage } from "@/utils/i18n";
+  import type { UILanguage } from "@/i18n/translations";
+
+  function initLanguageSwitcher() {
+    const details = document.getElementById("language-switcher") as HTMLDetailsElement | null;
+    details?.querySelectorAll<HTMLButtonElement>("[data-lang-option]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        setUILanguage(btn.dataset.langOption as UILanguage);
+        details.removeAttribute("open");
+      });
+    });
+
+    document.addEventListener("click", (e) => {
+      if (details && details.hasAttribute("open") && !details.contains(e.target as Node)) {
+        details.removeAttribute("open");
+      }
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", initLanguageSwitcher);
+  document.addEventListener("astro:page-load", initLanguageSwitcher);
+</script>

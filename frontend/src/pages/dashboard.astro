@@ -1,0 +1,174 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import LocationForm from "@/components/LocationForm.astro";
+import Icon from "@/components/Icon.astro";
+---
+
+<BaseLayout title="Farmer Dashboard">
+  <div class="mb-6">
+    <h1 class="section-heading">Farmer Dashboard</h1>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Your farm's complete picture — weather, soil, water, crop health and alerts in one view.</p>
+  </div>
+
+  <LocationForm formId="dashboard-form" submitLabel="Load Dashboard" />
+
+  <div id="dashboard-loading" class="mt-6 hidden grid gap-4 sm:grid-cols-4">
+    <div class="skeleton h-24"></div>
+    <div class="skeleton h-24"></div>
+    <div class="skeleton h-24"></div>
+    <div class="skeleton h-24"></div>
+  </div>
+
+  <div id="dashboard-content" class="mt-8 hidden grid gap-8 animate-slide-up">
+    <section id="alerts">
+      <h2 class="mb-3 text-base font-bold text-slate-900 dark:text-white">Today's Alerts</h2>
+      <div id="dashboard-alerts" class="grid gap-3"></div>
+    </section>
+
+    <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" id="dashboard-stats"></section>
+
+    <section class="glass-card border border-kisan-200/60 p-5 dark:border-kisan-800/40">
+      <p class="flex items-center gap-2 text-sm font-semibold text-kisan-700 dark:text-kisan-300">
+        <Icon name="sparkles" class="h-4 w-4" /> Quick AI Insight
+      </p>
+      <p id="dashboard-insight" class="mt-2 text-sm text-slate-700 dark:text-slate-200"></p>
+      <a href="/crop-recommendation" class="btn-secondary mt-4 !py-2 text-sm">
+        Get full crop plan <Icon name="chevron-right" class="h-4 w-4" />
+      </a>
+    </section>
+
+    <div class="grid gap-6 lg:grid-cols-2">
+      <section class="glass-card p-5 sm:p-6">
+        <h2 class="mb-4 text-base font-bold text-slate-900 dark:text-white">Rainfall Forecast (mm)</h2>
+        <div id="rainfall-chart-mount" style="height: 220px"></div>
+      </section>
+      <section class="glass-card p-5 sm:p-6">
+        <h2 class="mb-4 text-base font-bold text-slate-900 dark:text-white">Temperature Trend (°C)</h2>
+        <div id="temp-chart-mount" style="height: 220px"></div>
+      </section>
+      <section class="glass-card p-5 sm:p-6 lg:col-span-2">
+        <h2 class="mb-1 text-base font-bold text-slate-900 dark:text-white">Crop Health Timeline (NDVI-based, estimated)</h2>
+        <p class="mb-4 text-xs text-slate-400">Recent-weeks trend estimated from the latest satellite health score.</p>
+        <div id="health-chart-mount" style="height: 220px"></div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    import { api } from "@/services/api";
+    import { showToast } from "@/utils/toast";
+    import { formatDayShort } from "@/utils/format";
+    import { severityToColor } from "@/utils/format";
+    import { svgIcon } from "@/utils/icons";
+
+    const form = document.getElementById("dashboard-form") as HTMLFormElement | null;
+    const loadingEl = document.getElementById("dashboard-loading");
+    const contentEl = document.getElementById("dashboard-content");
+    const statsEl = document.getElementById("dashboard-stats");
+    const alertsEl = document.getElementById("dashboard-alerts");
+    const insightEl = document.getElementById("dashboard-insight");
+
+    function stat(label: string, value: string, sublabel: string, gradient: string, iconName: Parameters<typeof svgIcon>[0]) {
+      const div = document.createElement("div");
+      div.className = "glass-card flex items-center gap-4 p-4 sm:p-5";
+      div.innerHTML = `
+        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${gradient} text-white shadow-md">${svgIcon(iconName, "h-5 w-5")}</span>
+        <div class="min-w-0">
+          <p class="truncate text-xs font-medium text-slate-500 dark:text-slate-400">${label}</p>
+          <p class="truncate text-lg font-bold text-slate-900 dark:text-white">${value}</p>
+          <p class="truncate text-xs text-slate-400 dark:text-slate-500">${sublabel}</p>
+        </div>`;
+      return div;
+    }
+
+    async function mountChart(mountId: string, type: "line" | "bar", labels: string[], datasets: any[]) {
+      const { default: ChartMod } = await import("chart.js/auto");
+      const mount = document.getElementById(mountId);
+      if (!mount) return;
+      mount.innerHTML = "";
+      const canvas = document.createElement("canvas");
+      mount.appendChild(canvas);
+      new ChartMod(canvas, { type, data: { labels, datasets }, options: { responsive: true, maintainAspectRatio: false } });
+    }
+
+    form?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      const payload = {
+        state: String(formData.get("state") || ""),
+        district: String(formData.get("district") || ""),
+        village: (formData.get("village") as string) || undefined,
+      };
+
+      contentEl?.classList.add("hidden");
+      loadingEl?.classList.remove("hidden");
+
+      try {
+        const [weather, soil, groundwater, satellite, advisory] = await Promise.all([
+          api.getWeather(payload),
+          api.getSoil(payload),
+          api.getGroundwater(payload),
+          api.getSatellite(payload),
+          api.getAdvisory(payload).catch(() => ({ alerts: [] })),
+        ]);
+
+        if (statsEl) {
+          statsEl.innerHTML = "";
+          statsEl.appendChild(stat("Weather", `${weather.current.tempC}°C`, weather.current.condition, "from-amber-500 to-amber-600", "cloud-sun"));
+          statsEl.appendChild(stat("Soil", soil.texture.replace("-", " "), `Moisture ${soil.moisturePct}%`, "from-earth-500 to-earth-700", "sprout"));
+          statsEl.appendChild(stat("Water Level", `${groundwater.depthMeters}m`, `${groundwater.waterRisk} risk`, "from-sky-500 to-sky-700", "droplet"));
+          statsEl.appendChild(stat("Crop Health", `${satellite.healthScore}/100`, satellite.vegetationHealth, "from-kisan-500 to-kisan-700", "leaf"));
+        }
+
+        if (alertsEl) {
+          alertsEl.innerHTML = "";
+          if (advisory.alerts.length === 0) {
+            alertsEl.innerHTML = `<div class="glass-card flex items-center gap-3 p-4 text-sm font-medium text-kisan-700 dark:text-kisan-300"><span class="text-kisan-600 dark:text-kisan-400">${svgIcon("check-circle", "h-5 w-5")}</span>No active alerts. Conditions look normal.</div>`;
+          } else {
+            advisory.alerts.forEach((a: any) => {
+              const div = document.createElement("div");
+              div.className = `glass-panel border p-4 ${severityToColor(a.severity)}`;
+              div.innerHTML = `<p class="font-semibold">${a.title}</p><p class="mt-0.5 text-sm">${a.message}</p>`;
+              alertsEl.appendChild(div);
+            });
+          }
+        }
+
+        if (insightEl) {
+          const parts: string[] = [];
+          parts.push(`Soil moisture is ${soil.moisturePct}% with ${soil.texture.replace("-", " ")} texture.`);
+          parts.push(`Groundwater is ${groundwater.depthMeters}m deep (${groundwater.waterRisk} risk, ${groundwater.rechargeTrend}).`);
+          parts.push(`Crop health score is ${satellite.healthScore}/100 (${satellite.vegetationHealth}).`);
+          parts.push(
+            satellite.cropStressDetected
+              ? "Crop stress detected — a field inspection is recommended."
+              : "No crop stress detected from satellite data."
+          );
+          insightEl.textContent = parts.join(" ");
+        }
+
+        const labels = weather.forecast.map((d: any) => formatDayShort(d.date));
+        await mountChart("rainfall-chart-mount", "bar", labels, [
+          { label: "Precipitation (mm)", data: weather.forecast.map((d: any) => d.precipitationMm), backgroundColor: "#0ea5e9cc", borderRadius: 8 },
+        ]);
+        await mountChart("temp-chart-mount", "line", labels, [
+          { label: "Max °C", data: weather.forecast.map((d: any) => d.maxTempC), borderColor: "#e11d48", backgroundColor: "#e11d4833", tension: 0.35 },
+          { label: "Min °C", data: weather.forecast.map((d: any) => d.minTempC), borderColor: "#0ea5e9", backgroundColor: "#0ea5e933", tension: 0.35 },
+        ]);
+
+        const weekLabels = ["6w ago", "5w ago", "4w ago", "3w ago", "2w ago", "This week"];
+        const baseScore = satellite.healthScore;
+        const simulatedHistory = weekLabels.map((_, i) => Math.max(10, Math.min(100, baseScore - (5 - i) * 3 + (i % 2 === 0 ? 2 : -2))));
+        await mountChart("health-chart-mount", "line", weekLabels, [
+          { label: "Health Score", data: simulatedHistory, borderColor: "#16a34a", backgroundColor: "#16a34a33", tension: 0.35 },
+        ]);
+
+        contentEl?.classList.remove("hidden");
+      } catch (err) {
+        showToast("Could not load dashboard. Please try again.", "error");
+      } finally {
+        loadingEl?.classList.add("hidden");
+      }
+    });
+  </script>
+</BaseLayout>

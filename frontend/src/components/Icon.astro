@@ -1,0 +1,115 @@
+---
+import Sprout from "lucide-static/icons/sprout.svg?raw";
+import CloudRain from "lucide-static/icons/cloud-rain.svg?raw";
+import Droplets from "lucide-static/icons/droplets.svg?raw";
+import Satellite from "lucide-static/icons/satellite.svg?raw";
+import Camera from "lucide-static/icons/camera.svg?raw";
+import Mic from "lucide-static/icons/mic.svg?raw";
+import Bell from "lucide-static/icons/bell.svg?raw";
+import Home from "lucide-static/icons/house.svg?raw";
+import LayoutDashboard from "lucide-static/icons/layout-dashboard.svg?raw";
+import Sun from "lucide-static/icons/sun.svg?raw";
+import Moon from "lucide-static/icons/moon.svg?raw";
+import Menu from "lucide-static/icons/menu.svg?raw";
+import MapPin from "lucide-static/icons/map-pin.svg?raw";
+import Leaf from "lucide-static/icons/leaf.svg?raw";
+import AlertTriangle from "lucide-static/icons/triangle-alert.svg?raw";
+import Thermometer from "lucide-static/icons/thermometer.svg?raw";
+import Wind from "lucide-static/icons/wind.svg?raw";
+import Gauge from "lucide-static/icons/gauge.svg?raw";
+import Upload from "lucide-static/icons/upload.svg?raw";
+import Send from "lucide-static/icons/send.svg?raw";
+import ChevronRight from "lucide-static/icons/chevron-right.svg?raw";
+import CheckCircle from "lucide-static/icons/circle-check-big.svg?raw";
+import XCircle from "lucide-static/icons/circle-x.svg?raw";
+import Activity from "lucide-static/icons/activity.svg?raw";
+import Waves from "lucide-static/icons/waves.svg?raw";
+import Sparkles from "lucide-static/icons/sparkles.svg?raw";
+import X from "lucide-static/icons/x.svg?raw";
+import Volume2 from "lucide-static/icons/volume-2.svg?raw";
+import Loader from "lucide-static/icons/loader-circle.svg?raw";
+import TrendingUp from "lucide-static/icons/trending-up.svg?raw";
+import TrendingDown from "lucide-static/icons/trending-down.svg?raw";
+import Sprout2 from "lucide-static/icons/wheat.svg?raw";
+import BadgeCheck from "lucide-static/icons/badge-check.svg?raw";
+import MessageCircle from "lucide-static/icons/message-circle.svg?raw";
+import Globe from "lucide-static/icons/globe.svg?raw";
+import User from "lucide-static/icons/user.svg?raw";
+import LogOut from "lucide-static/icons/log-out.svg?raw";
+import History from "lucide-static/icons/history.svg?raw";
+import Lock from "lucide-static/icons/lock.svg?raw";
+import Phone from "lucide-static/icons/phone.svg?raw";
+import Calendar from "lucide-static/icons/calendar.svg?raw";
+import Snowflake from "lucide-static/icons/snowflake.svg?raw";
+import Cloud from "lucide-static/icons/cloud.svg?raw";
+import CloudSun from "lucide-static/icons/cloud-sun.svg?raw";
+import CloudFog from "lucide-static/icons/cloud-fog.svg?raw";
+import CloudLightning from "lucide-static/icons/cloud-lightning.svg?raw";
+import Minus from "lucide-static/icons/minus.svg?raw";
+import Carrot from "lucide-static/icons/carrot.svg?raw";
+import Apple from "lucide-static/icons/apple.svg?raw";
+import Droplet from "lucide-static/icons/droplet.svg?raw";
+
+const ICONS: Record<string, string> = {
+  sprout: Sprout,
+  "cloud-rain": CloudRain,
+  droplets: Droplets,
+  satellite: Satellite,
+  camera: Camera,
+  mic: Mic,
+  bell: Bell,
+  home: Home,
+  dashboard: LayoutDashboard,
+  sun: Sun,
+  moon: Moon,
+  menu: Menu,
+  "map-pin": MapPin,
+  leaf: Leaf,
+  "alert-triangle": AlertTriangle,
+  thermometer: Thermometer,
+  wind: Wind,
+  gauge: Gauge,
+  upload: Upload,
+  send: Send,
+  "chevron-right": ChevronRight,
+  "check-circle": CheckCircle,
+  "x-circle": XCircle,
+  activity: Activity,
+  waves: Waves,
+  sparkles: Sparkles,
+  x: X,
+  volume: Volume2,
+  loader: Loader,
+  "trending-up": TrendingUp,
+  "trending-down": TrendingDown,
+  wheat: Sprout2,
+  "badge-check": BadgeCheck,
+  message: MessageCircle,
+  globe: Globe,
+  user: User,
+  "log-out": LogOut,
+  history: History,
+  lock: Lock,
+  phone: Phone,
+  calendar: Calendar,
+  snowflake: Snowflake,
+  cloud: Cloud,
+  "cloud-sun": CloudSun,
+  "cloud-fog": CloudFog,
+  "cloud-lightning": CloudLightning,
+  minus: Minus,
+  carrot: Carrot,
+  apple: Apple,
+  droplet: Droplet,
+};
+
+interface Props {
+  name: keyof typeof ICONS;
+  class?: string;
+}
+
+const { name, class: className = "h-5 w-5" } = Astro.props;
+const svg = (ICONS[name] ?? Leaf).replace("<svg", `<svg class="${className}"`);
+---
+
+<Fragment set:html={svg} />

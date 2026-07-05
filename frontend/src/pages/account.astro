@@ -1,0 +1,225 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Icon from "@/components/Icon.astro";
+import LanguageSelector from "@/components/LanguageSelector.astro";
+import { INDIAN_STATES, SEASONS } from "@/utils/constants";
+---
+
+<BaseLayout title="My Account">
+  <div id="account-guard" class="hidden glass-card p-8 text-center">
+    <p class="text-sm font-medium text-slate-600 dark:text-slate-300">Please log in to view your account.</p>
+    <a href="/login" class="btn-primary mt-4 inline-flex">Log In</a>
+  </div>
+
+  <div id="account-content" class="hidden grid gap-8">
+    <div class="glass-card flex flex-wrap items-center justify-between gap-4 p-6">
+      <div class="flex items-center gap-3">
+        <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-kisan-500 to-kisan-700 text-white shadow-md">
+          <Icon name="user" class="h-6 w-6" />
+        </span>
+        <div>
+          <p id="account-name" class="text-lg font-bold text-slate-900 dark:text-white"></p>
+          <p id="account-phone" class="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
+            <Icon name="phone" class="h-3.5 w-3.5" />
+          </p>
+        </div>
+      </div>
+      <button id="logout-btn" class="btn-secondary !py-2 text-sm">
+        <Icon name="log-out" class="h-4 w-4" /> Sign Out
+      </button>
+    </div>
+
+    <section class="glass-card p-6 sm:p-8">
+      <h2 class="mb-4 text-base font-bold text-slate-900 dark:text-white">Preferences</h2>
+      <form id="preferences-form" class="grid gap-4">
+        <label class="grid gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+          Full Name
+          <input id="pref-name" placeholder="e.g. Ramesh Kumar" class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-slate-800 placeholder:text-slate-400 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white" />
+        </label>
+        <label class="grid gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+          Preferred Language
+          <LanguageSelector id="pref-language" />
+        </label>
+
+        <div class="grid gap-4 sm:grid-cols-3">
+          <label class="grid gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+            State
+            <select id="pref-state" class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-slate-800 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white">
+              <option value="">Select state</option>
+              {INDIAN_STATES.map((state) => <option value={state}>{state}</option>)}
+            </select>
+          </label>
+          <label class="grid gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+            District
+            <input id="pref-district" placeholder="e.g. Guntur" class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-slate-800 placeholder:text-slate-400 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white" />
+          </label>
+          <label class="grid gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+            Village <span class="font-normal text-slate-400">(optional)</span>
+            <input id="pref-village" placeholder="e.g. Pedapalem" class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-slate-800 placeholder:text-slate-400 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white" />
+          </label>
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="grid gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+            Land Area (acres)
+            <input id="pref-land" type="number" min="0.1" step="0.1" placeholder="e.g. 2.5" class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-slate-800 placeholder:text-slate-400 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white" />
+          </label>
+          <label class="grid gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
+            Default Season
+            <select id="pref-season" class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-slate-800 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white">
+              <option value="">Select season</option>
+              {SEASONS.map((s) => <option value={s.value}>{s.label}</option>)}
+            </select>
+          </label>
+        </div>
+
+        <button type="submit" class="btn-primary mt-1 self-start">Save Preferences</button>
+      </form>
+    </section>
+
+    <section>
+      <h2 class="mb-3 text-base font-bold text-slate-900 dark:text-white">
+        <Icon name="history" class="mr-1 inline h-4 w-4" /> Your History
+      </h2>
+
+      <div class="grid gap-6">
+        <div>
+          <p class="mb-2 text-sm font-semibold text-slate-600 dark:text-slate-300">Crop Recommendations</p>
+          <div id="history-crops" class="grid gap-2"></div>
+        </div>
+        <div>
+          <p class="mb-2 text-sm font-semibold text-slate-600 dark:text-slate-300">Disease Reports</p>
+          <div id="history-disease" class="grid gap-2"></div>
+        </div>
+        <div>
+          <p class="mb-2 text-sm font-semibold text-slate-600 dark:text-slate-300">Voice Queries</p>
+          <div id="history-voice" class="grid gap-2"></div>
+        </div>
+        <div>
+          <p class="mb-2 text-sm font-semibold text-slate-600 dark:text-slate-300">Alerts</p>
+          <div id="history-alerts" class="grid gap-2"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    import { api } from "@/services/api";
+    import { signOut, waitForAuthInit } from "@/utils/firebase";
+    import { showToast } from "@/utils/toast";
+    import { formatDate } from "@/utils/format";
+
+    const guardEl = document.getElementById("account-guard");
+    const contentEl = document.getElementById("account-content");
+
+    function emptyState(text: string) {
+      const div = document.createElement("div");
+      div.className = "glass-panel p-3 text-sm text-slate-400";
+      div.textContent = text;
+      return div;
+    }
+
+    async function init() {
+      const user = await waitForAuthInit();
+      if (!user) {
+        guardEl?.classList.remove("hidden");
+        return;
+      }
+
+      try {
+        const { farmer } = await api.auth.session();
+        contentEl?.classList.remove("hidden");
+
+        document.getElementById("account-name")!.textContent = farmer.name;
+        document.getElementById("account-phone")!.innerHTML = `<span>${farmer.phoneNumber}</span>`;
+        (document.getElementById("pref-name") as HTMLInputElement).value = farmer.name;
+
+        (document.getElementById("pref-language") as HTMLSelectElement).value = farmer.preferences.preferredLanguage ?? "hi";
+        (document.getElementById("pref-state") as HTMLSelectElement).value = farmer.preferences.state ?? "";
+        (document.getElementById("pref-district") as HTMLInputElement).value = farmer.preferences.district ?? "";
+        (document.getElementById("pref-village") as HTMLInputElement).value = farmer.preferences.village ?? "";
+        (document.getElementById("pref-land") as HTMLInputElement).value = farmer.preferences.landAreaAcres?.toString() ?? "";
+        (document.getElementById("pref-season") as HTMLSelectElement).value = farmer.preferences.defaultSeason ?? "";
+
+        const history = await api.getHistory();
+
+        const cropsEl = document.getElementById("history-crops")!;
+        if (history.cropRecommendations.length === 0) {
+          cropsEl.appendChild(emptyState("No crop recommendations yet."));
+        } else {
+          history.cropRecommendations.forEach((r) => {
+            const div = document.createElement("div");
+            div.className = "glass-panel p-3 text-sm";
+            div.innerHTML = `<p class="font-semibold text-slate-800 dark:text-slate-100">${r.state}, ${r.district} · ${r.season}</p><p class="mt-0.5 text-slate-500 dark:text-slate-400">${r.aiSummary}</p><p class="mt-1 text-xs text-slate-400">${formatDate(r.createdAt)} · ${r.confidencePct}% confidence</p>`;
+            cropsEl.appendChild(div);
+          });
+        }
+
+        const diseaseEl = document.getElementById("history-disease")!;
+        if (history.diseaseReports.length === 0) {
+          diseaseEl.appendChild(emptyState("No disease reports yet."));
+        } else {
+          history.diseaseReports.forEach((r) => {
+            const div = document.createElement("div");
+            div.className = "glass-panel p-3 text-sm";
+            div.innerHTML = `<p class="font-semibold text-slate-800 dark:text-slate-100">${r.disease}</p><p class="mt-1 text-xs text-slate-400">${formatDate(r.createdAt)} · ${r.confidencePct}% confidence</p>`;
+            diseaseEl.appendChild(div);
+          });
+        }
+
+        const voiceEl = document.getElementById("history-voice")!;
+        if (history.voiceQueries.length === 0) {
+          voiceEl.appendChild(emptyState("No voice queries yet."));
+        } else {
+          history.voiceQueries.forEach((r) => {
+            const div = document.createElement("div");
+            div.className = "glass-panel p-3 text-sm";
+            div.innerHTML = `<p class="font-semibold text-slate-800 dark:text-slate-100">${r.queryText}</p><p class="mt-0.5 text-slate-500 dark:text-slate-400">${r.answerText}</p><p class="mt-1 text-xs text-slate-400">${formatDate(r.createdAt)}</p>`;
+            voiceEl.appendChild(div);
+          });
+        }
+
+        const alertsEl = document.getElementById("history-alerts")!;
+        if (history.alerts.length === 0) {
+          alertsEl.appendChild(emptyState("No alerts yet."));
+        } else {
+          history.alerts.forEach((r) => {
+            const div = document.createElement("div");
+            div.className = "glass-panel p-3 text-sm";
+            div.innerHTML = `<p class="font-semibold text-slate-800 dark:text-slate-100">${r.title}</p><p class="mt-0.5 text-slate-500 dark:text-slate-400">${r.message}</p><p class="mt-1 text-xs text-slate-400">${formatDate(r.createdAt)}</p>`;
+            alertsEl.appendChild(div);
+          });
+        }
+      } catch (err) {
+        showToast("Could not load your account. Please log in again.", "error");
+        guardEl?.classList.remove("hidden");
+        contentEl?.classList.add("hidden");
+      }
+    }
+
+    document.getElementById("logout-btn")?.addEventListener("click", async () => {
+      await signOut();
+      window.location.href = "/";
+    });
+
+    document.getElementById("preferences-form")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        await api.profile.update({
+          name: (document.getElementById("pref-name") as HTMLInputElement).value.trim() || undefined,
+          preferredLanguage: (document.getElementById("pref-language") as HTMLSelectElement).value as any,
+          state: (document.getElementById("pref-state") as HTMLSelectElement).value || undefined,
+          district: (document.getElementById("pref-district") as HTMLInputElement).value || undefined,
+          village: (document.getElementById("pref-village") as HTMLInputElement).value || undefined,
+          landAreaAcres: Number((document.getElementById("pref-land") as HTMLInputElement).value) || undefined,
+          defaultSeason: ((document.getElementById("pref-season") as HTMLSelectElement).value || undefined) as any,
+        });
+        showToast("Preferences saved", "success");
+      } catch (err) {
+        showToast("Could not save preferences", "error");
+      }
+    });
+
+    init();
+  </script>
+</BaseLayout>
