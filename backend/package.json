@@ -6,15 +6,20 @@
   "scripts": {
     "dev": "wrangler dev",
     "build": "tsc --noEmit",
+    "build:node": "esbuild src/server.ts --bundle --platform=node --format=esm --outfile=dist/server.js",
+    "start": "node dist/server.js",
     "deploy": "wrangler deploy",
     "typegen": "wrangler types"
   },
   "dependencies": {
+    "@hono/node-server": "^1.13.7",
     "hono": "^4.6.14",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260701.1",
+    "@types/node": "^20.11.0",
+    "esbuild": "^0.25.0",
     "typescript": "^5.7.2",
     "wrangler": "^3.99.0"
   }

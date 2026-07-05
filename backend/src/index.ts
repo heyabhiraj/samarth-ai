@@ -22,6 +22,13 @@ import geocode from "./routes/geocode";
 
 const app = new Hono<{ Bindings: Env; Variables: AuthVariables }>();
 
+app.use("*", async (c, next) => {
+  if (!c.env || Object.keys(c.env).length === 0) {
+    c.env = process.env as any;
+  }
+  await next();
+});
+
 app.use("*", logger());
 app.use(
   "/api/*",

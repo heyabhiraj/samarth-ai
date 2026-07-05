@@ -11,7 +11,7 @@ enabled = true
 # bindings are needed.
 
 [vars]
-GCP_PROJECT_ID = "your-gcp-project-id"
+GCP_PROJECT_ID = "samarth-56162"
 GCS_BUCKET_NAME = "samarth-kisan-ai-images"
 GEMINI_TEXT_MODEL = "gemini-2.5-flash"
 GEMINI_VISION_MODEL = "gemini-2.5-flash"

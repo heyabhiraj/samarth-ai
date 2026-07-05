@@ -97,12 +97,13 @@ import Icon from "@/components/Icon.astro";
         otpForm?.classList.remove("hidden");
         otpInput?.focus();
       } catch (err: any) {
+        console.error("Firebase Auth Error:", err);
         const message =
           err?.code === "auth/too-many-requests"
             ? "Too many attempts. Please try again later."
             : err?.code === "auth/invalid-phone-number"
               ? "That doesn't look like a valid phone number."
-              : "Could not send the code. Please try again.";
+              : `Could not send the code: ${err?.message || err}`;
         showToast(message, "error");
       } finally {
         if (sendOtpBtn) {
