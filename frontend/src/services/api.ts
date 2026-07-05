@@ -4,10 +4,14 @@ import type {
   CropReference,
   CropRecommendationResponse,
   DiseaseDetectionResult,
+  Escalation,
   Farmer,
   FarmerPreferences,
+  Friend,
   GroundwaterData,
   HistoryResponse,
+  PlantingWithStatus,
+  SchemesResponse,
   Season,
   SatelliteData,
   SessionResponse,
@@ -119,4 +123,55 @@ export const api = {
     request<{ state: string; district: string; latitude: number; longitude: number; precise: boolean }>(
       `/api/geocode/reverse?lat=${lat}&lon=${lon}`
     ),
+
+  getSchemes: (state: string, language?: string) => {
+    const search = new URLSearchParams({ state });
+    if (language) search.set("language", language);
+    return request<SchemesResponse>(`/api/schemes?${search.toString()}`);
+  },
+
+  friends: {
+    list: () => request<Friend[]>("/api/friends"),
+    add: (payload: { name: string; phoneNumber: string }) =>
+      request<Friend>("/api/friends", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+    remove: (id: string) => request<{ deleted: boolean }>(`/api/friends/${id}`, { method: "DELETE" }),
+    broadcast: (message: string) =>
+      request<{ total: number; sent: number; reason?: string }>("/api/friends/broadcast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      }),
+  },
+
+  plantings: {
+    list: () => request<PlantingWithStatus[]>("/api/plantings"),
+    add: (payload: { cropName: string; sowingDate: string; avgDurationDays?: number }) =>
+      request<PlantingWithStatus>("/api/plantings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+    remove: (id: string) => request<{ deleted: boolean }>(`/api/plantings/${id}`, { method: "DELETE" }),
+  },
+
+  escalations: {
+    list: () => request<Escalation[]>("/api/escalations"),
+    create: (payload: {
+      diseaseReportId?: string;
+      disease: string;
+      imageUrl?: string;
+      note?: string;
+      state: string;
+      district: string;
+    }) =>
+      request<Escalation>("/api/escalations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }),
+  },
 };

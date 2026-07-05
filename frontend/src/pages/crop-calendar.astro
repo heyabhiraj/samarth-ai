@@ -1,0 +1,110 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="Crop Calendar">
+  <div class="mb-6">
+    <h1 class="section-heading" data-i18n="calendar.heading">Crop Calendar</h1>
+    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400" data-i18n="calendar.subheading">
+      Month-by-month guide: when to sow, grow, and harvest each crop.
+    </p>
+  </div>
+
+  <div class="mb-4 flex flex-wrap items-center gap-4 text-xs font-medium text-slate-600 dark:text-slate-300">
+    <span class="flex items-center gap-1.5"><span class="h-3 w-5 rounded bg-kisan-600"></span><span data-i18n="calendar.sow">Sow</span></span>
+    <span class="flex items-center gap-1.5"><span class="h-3 w-5 rounded bg-kisan-200 dark:bg-kisan-800"></span><span data-i18n="calendar.grow">Grow</span></span>
+    <span class="flex items-center gap-1.5"><span class="h-3 w-5 rounded bg-amber-400"></span><span data-i18n="calendar.harvest">Harvest</span></span>
+  </div>
+
+  <div id="calendar-loading" class="grid gap-3">
+    <div class="skeleton h-12"></div>
+    <div class="skeleton h-12"></div>
+    <div class="skeleton h-12"></div>
+    <div class="skeleton h-12"></div>
+  </div>
+
+  <div id="calendar-wrap" class="glass-card hidden overflow-x-auto p-4">
+    <table class="w-full min-w-[720px] border-collapse text-xs">
+      <thead>
+        <tr id="calendar-head"></tr>
+      </thead>
+      <tbody id="calendar-body"></tbody>
+    </table>
+  </div>
+
+  <script>
+    import { api } from "@/services/api";
+    import { cropCategoryIcon } from "@/utils/icons";
+    import type { CropReference, Season } from "@/types";
+
+    const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    // 0-indexed sowing start month per season (approximate all-India windows).
+    const SEASON_SOW_MONTH: Record<Season, number> = { kharif: 5, rabi: 10, zaid: 2 };
+
+    type CellState = "" | "sow" | "grow" | "harvest";
+
+    function monthStates(crop: CropReference): CellState[] {
+      const cells: CellState[] = Array(12).fill("");
+      for (const season of crop.seasons) {
+        const sowMonth = SEASON_SOW_MONTH[season];
+        const growMonths = Math.max(1, Math.min(10, Math.round(crop.avgDurationDays / 30) - 1));
+        // Later phases never overwrite a harvest mark from another season.
+        if (cells[sowMonth] === "") cells[sowMonth] = "sow";
+        for (let i = 1; i <= growMonths; i++) {
+          const idx = (sowMonth + i) % 12;
+          if (cells[idx] === "") cells[idx] = "grow";
+        }
+        cells[(sowMonth + growMonths + 1) % 12] = "harvest";
+      }
+      return cells;
+    }
+
+    const CELL_CLASS: Record<CellState, string> = {
+      "": "",
+      sow: "bg-kisan-600",
+      grow: "bg-kisan-200 dark:bg-kisan-800",
+      harvest: "bg-amber-400",
+    };
+
+    async function render() {
+      const headEl = document.getElementById("calendar-head");
+      const bodyEl = document.getElementById("calendar-body");
+      const loadingEl = document.getElementById("calendar-loading");
+      const wrapEl = document.getElementById("calendar-wrap");
+      if (!headEl || !bodyEl) return;
+
+      try {
+        const crops = await api.getCrops();
+
+        headEl.innerHTML =
+          `<th class="sticky left-0 bg-white/95 p-2 text-left font-semibold text-slate-700 backdrop-blur dark:bg-slate-900/95 dark:text-slate-200">Crop</th>` +
+          MONTHS.map((m) => `<th class="p-1.5 text-center font-medium text-slate-400">${m}</th>`).join("");
+
+        bodyEl.innerHTML = crops
+          .map((crop) => {
+            const cells = monthStates(crop)
+              .map((state) => `<td class="p-1"><span class="block h-5 w-full rounded ${CELL_CLASS[state]}"></span></td>`)
+              .join("");
+            return `<tr class="border-t border-slate-200/60 dark:border-white/10">
+              <td class="sticky left-0 bg-white/95 p-2 backdrop-blur dark:bg-slate-900/95">
+                <span class="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-100">
+                  <span class="text-slate-400">${cropCategoryIcon(crop.category, "h-4 w-4")}</span>${crop.name}
+                </span>
+              </td>${cells}</tr>`;
+          })
+          .join("");
+
+        loadingEl?.classList.add("hidden");
+        wrapEl?.classList.remove("hidden");
+      } catch {
+        if (loadingEl) loadingEl.innerHTML = `<p class="py-8 text-center text-sm text-slate-400">Could not load the crop calendar. Please try again.</p>`;
+      }
+    }
+
+    render();
+  </script>
+
+  <script>
+    import "@/utils/i18n";
+  </script>
+</BaseLayout>

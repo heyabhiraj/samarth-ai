@@ -2,6 +2,7 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Icon from "@/components/Icon.astro";
 import LanguageSelector from "@/components/LanguageSelector.astro";
+import TodayWeatherWidget from "@/components/TodayWeatherWidget.astro";
 import { INDIAN_STATES, SEASONS } from "@/utils/constants";
 ---
 
@@ -11,7 +12,14 @@ import { INDIAN_STATES, SEASONS } from "@/utils/constants";
     <a href="/login" class="btn-primary mt-4 inline-flex">Log In</a>
   </div>
 
+  <div id="account-loading" class="grid gap-4">
+    <div class="skeleton h-20"></div>
+    <div class="skeleton h-40"></div>
+    <div class="skeleton h-40"></div>
+  </div>
+
   <div id="account-content" class="hidden grid gap-8">
+    <!-- Profile header -->
     <div class="glass-card flex flex-wrap items-center justify-between gap-4 p-6">
       <div class="flex items-center gap-3">
         <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-kisan-500 to-kisan-700 text-white shadow-md">
@@ -22,6 +30,9 @@ import { INDIAN_STATES, SEASONS } from "@/utils/constants";
           <p id="account-phone" class="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
             <Icon name="phone" class="h-3.5 w-3.5" />
           </p>
+          <p id="account-home" class="hidden items-center gap-1 text-xs text-slate-400">
+            <Icon name="map-pin" class="h-3 w-3" />
+          </p>
         </div>
       </div>
       <button id="logout-btn" class="btn-secondary !py-2 text-sm">
@@ -29,8 +40,67 @@ import { INDIAN_STATES, SEASONS } from "@/utils/constants";
       </button>
     </div>
 
+    <!-- Harvest reminder banner (shown only when a crop is due soon) -->
+    <div id="harvest-reminder" class="hidden"></div>
+
+    <!-- Dashboard: weather + quick links -->
+    <div class="grid gap-6 lg:grid-cols-2">
+      <TodayWeatherWidget />
+
+      <div class="grid content-start gap-4">
+        <a href="/crop-recommendation" class="glass-card flex items-center gap-4 p-5 transition-transform hover:-translate-y-0.5">
+          <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-kisan-500 to-kisan-700 text-white shadow-md"><Icon name="sprout" class="h-5 w-5" /></span>
+          <span>
+            <span class="block font-bold text-slate-900 dark:text-white">Get Crop Advice</span>
+            <span class="text-xs text-slate-400">Uses your saved farm details below</span>
+          </span>
+        </a>
+        <a href="/crop-calendar" class="glass-card flex items-center gap-4 p-5 transition-transform hover:-translate-y-0.5">
+          <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-md"><Icon name="calendar" class="h-5 w-5" /></span>
+          <span>
+            <span class="block font-bold text-slate-900 dark:text-white">Crop Calendar</span>
+            <span class="text-xs text-slate-400">When to sow and harvest, month by month</span>
+          </span>
+        </a>
+        <button type="button" data-open-schemes class="glass-card flex items-center gap-4 p-5 text-left transition-transform hover:-translate-y-0.5">
+          <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-sky-700 text-white shadow-md"><Icon name="bell" class="h-5 w-5" /></span>
+          <span>
+            <span class="block font-bold text-slate-900 dark:text-white">Govt Schemes</span>
+            <span class="text-xs text-slate-400">Support you may be eligible for in your state</span>
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <!-- My Plantings (harvest reminders) -->
     <section class="glass-card p-6 sm:p-8">
-      <h2 class="mb-4 text-base font-bold text-slate-900 dark:text-white">Preferences</h2>
+      <h2 class="mb-1 flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white">
+        <Icon name="sprout" class="h-4 w-4 text-kisan-600 dark:text-kisan-400" /> My Plantings
+      </h2>
+      <p class="mb-4 text-xs text-slate-400">Log what you sowed and when — we'll track the growth stage and remind you as harvest time approaches.</p>
+
+      <div id="plantings-list" class="mb-4 grid gap-3"></div>
+
+      <form id="planting-add-form" class="flex flex-wrap items-end gap-2">
+        <label class="grid min-w-40 flex-1 gap-1 text-xs font-medium text-slate-600 dark:text-slate-300">
+          Crop
+          <select id="planting-crop" required class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-sm text-slate-800 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white">
+            <option value="" disabled selected>Select crop</option>
+          </select>
+        </label>
+        <label class="grid min-w-36 flex-1 gap-1 text-xs font-medium text-slate-600 dark:text-slate-300">
+          Sowing date
+          <input id="planting-date" required type="date" class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-sm text-slate-800 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white" />
+        </label>
+        <button type="submit" class="btn-secondary !px-4 !py-2 text-sm">
+          <Icon name="sprout" class="h-4 w-4" /> Add
+        </button>
+      </form>
+    </section>
+
+    <!-- Profile & farm details -->
+    <section class="glass-card p-6 sm:p-8">
+      <h2 class="mb-4 text-base font-bold text-slate-900 dark:text-white">My Farm Details</h2>
       <form id="preferences-form" class="grid gap-4">
         <label class="grid gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
           Full Name
@@ -40,6 +110,16 @@ import { INDIAN_STATES, SEASONS } from "@/utils/constants";
           Preferred Language
           <LanguageSelector id="pref-language" />
         </label>
+
+        <button
+          type="button"
+          id="pref-detect-location-btn"
+          class="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-kisan-400/60 bg-kisan-50/60 px-4 py-3 text-sm font-semibold text-kisan-700 transition-colors hover:bg-kisan-50 dark:border-kisan-700/50 dark:bg-kisan-950/20 dark:text-kisan-300"
+        >
+          <Icon name="map-pin" class="h-4 w-4" />
+          Save my field's location (GPS)
+        </button>
+        <p id="pref-location-status" class="hidden text-center text-xs font-medium text-slate-500 dark:text-slate-400"></p>
 
         <div class="grid gap-4 sm:grid-cols-3">
           <label class="grid gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
@@ -73,10 +153,46 @@ import { INDIAN_STATES, SEASONS } from "@/utils/constants";
           </label>
         </div>
 
-        <button type="submit" class="btn-primary mt-1 self-start">Save Preferences</button>
+        <button type="submit" class="btn-primary mt-1 self-start">Save Details</button>
       </form>
     </section>
 
+    <!-- Friends / SMS broadcast -->
+    <section class="glass-card p-6 sm:p-8">
+      <h2 class="mb-1 flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white">
+        <Icon name="message" class="h-4 w-4 text-kisan-600 dark:text-kisan-400" /> My Friends
+      </h2>
+      <p class="mb-4 text-xs text-slate-400">Save fellow farmers' numbers and send one SMS to everyone at once — e.g. a weather warning or mandi update.</p>
+
+      <div id="friends-list" class="mb-4 grid gap-2"></div>
+
+      <form id="friend-add-form" class="mb-6 flex flex-wrap gap-2">
+        <input id="friend-name" required placeholder="Friend's name" class="min-w-32 flex-1 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white" />
+        <input id="friend-phone" required type="tel" pattern="[0-9]{10}" placeholder="10-digit phone" class="min-w-36 flex-1 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white" />
+        <button type="submit" class="btn-secondary !px-4 !py-2 text-sm">
+          <Icon name="user" class="h-4 w-4" /> Add
+        </button>
+      </form>
+
+      <form id="broadcast-form" class="grid gap-2">
+        <label class="text-sm font-medium text-slate-700 dark:text-slate-200">Broadcast SMS to all friends</label>
+        <textarea id="broadcast-message" rows="3" maxlength="320" placeholder="e.g. Heavy rain expected in 2 days — harvest ready paddy early." class="rounded-xl border border-slate-200 bg-white/80 px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white"></textarea>
+        <button type="submit" class="btn-primary self-start !py-2 text-sm">
+          <Icon name="send" class="h-4 w-4" /> Send to All
+        </button>
+      </form>
+    </section>
+
+    <!-- Expert requests (escalations) -->
+    <section class="glass-card p-6 sm:p-8">
+      <h2 class="mb-1 flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white">
+        <Icon name="badge-check" class="h-4 w-4 text-kisan-600 dark:text-kisan-400" /> Expert Help Requests
+      </h2>
+      <p class="mb-4 text-xs text-slate-400">When AI isn't enough, send a disease report to a farm expert. Use the "Ask an expert" button on any disease report below.</p>
+      <div id="escalations-list" class="grid gap-2"></div>
+    </section>
+
+    <!-- History -->
     <section>
       <h2 class="mb-3 text-base font-bold text-slate-900 dark:text-white">
         <Icon name="history" class="mr-1 inline h-4 w-4" /> Your History
@@ -108,9 +224,19 @@ import { INDIAN_STATES, SEASONS } from "@/utils/constants";
     import { signOut, waitForAuthInit } from "@/utils/firebase";
     import { showToast } from "@/utils/toast";
     import { formatDate } from "@/utils/format";
+    import { detectLocation } from "@/utils/geolocate";
+    import { svgIcon } from "@/utils/icons";
+    import type { Escalation, Friend, PlantingWithStatus } from "@/types";
 
     const guardEl = document.getElementById("account-guard");
+    const loadingEl = document.getElementById("account-loading");
     const contentEl = document.getElementById("account-content");
+
+    let homeLatitude: number | undefined;
+    let homeLongitude: number | undefined;
+    // The farmer's saved state/district — needed when creating an escalation.
+    let currentState = "";
+    let currentDistrict = "";
 
     function emptyState(text: string) {
       const div = document.createElement("div");
@@ -119,16 +245,240 @@ import { INDIAN_STATES, SEASONS } from "@/utils/constants";
       return div;
     }
 
+    function showHomeLocation(lat?: number, lon?: number) {
+      const el = document.getElementById("account-home");
+      if (!el) return;
+      if (lat !== undefined && lon !== undefined) {
+        el.classList.remove("hidden");
+        el.classList.add("flex");
+        el.innerHTML = `${svgIcon("map-pin", "h-3 w-3")} <span>Field saved at ${lat.toFixed(4)}, ${lon.toFixed(4)}</span>`;
+      }
+    }
+
+    // ---- Plantings (harvest reminders) ----
+    const STAGE_LABEL: Record<PlantingWithStatus["stage"], string> = {
+      sowing: "Just sown",
+      growing: "Growing",
+      maturing: "Maturing",
+      "harvest-ready": "Harvest soon",
+      overdue: "Harvest overdue",
+    };
+    const STAGE_COLOR: Record<PlantingWithStatus["stage"], string> = {
+      sowing: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
+      growing: "bg-kisan-100 text-kisan-700 dark:bg-kisan-900/40 dark:text-kisan-300",
+      maturing: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+      "harvest-ready": "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
+      overdue: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
+    };
+
+    function harvestCountdownText(p: PlantingWithStatus): string {
+      if (p.daysToHarvest < 0) return `Harvest was due ${Math.abs(p.daysToHarvest)} day${Math.abs(p.daysToHarvest) === 1 ? "" : "s"} ago`;
+      if (p.daysToHarvest === 0) return "Expected harvest is today";
+      return `${p.daysToHarvest} day${p.daysToHarvest === 1 ? "" : "s"} to expected harvest`;
+    }
+
+    function renderHarvestReminder(plantings: PlantingWithStatus[]) {
+      const banner = document.getElementById("harvest-reminder");
+      if (!banner) return;
+      const due = plantings.filter((p) => p.stage === "harvest-ready" || p.stage === "overdue");
+      if (due.length === 0) {
+        banner.classList.add("hidden");
+        return;
+      }
+      const items = due
+        .map((p) => `<li class="flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-current"></span>${p.cropName} — ${harvestCountdownText(p)}</li>`)
+        .join("");
+      banner.className = "glass-panel border border-amber-400/60 bg-amber-50/80 p-4 dark:bg-amber-950/30";
+      banner.innerHTML = `
+        <p class="flex items-center gap-2 font-semibold text-amber-800 dark:text-amber-200">${svgIcon("alert-triangle", "h-5 w-5")} Harvest reminder</p>
+        <ul class="mt-2 grid gap-1 text-sm text-amber-800 dark:text-amber-200">${items}</ul>`;
+    }
+
+    function renderPlantings(plantings: PlantingWithStatus[]) {
+      const listEl = document.getElementById("plantings-list");
+      if (!listEl) return;
+      listEl.innerHTML = "";
+
+      if (plantings.length === 0) {
+        listEl.appendChild(emptyState("No plantings logged yet."));
+        return;
+      }
+
+      plantings.forEach((p) => {
+        const div = document.createElement("div");
+        div.className = "glass-panel p-3";
+        div.innerHTML = `
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <p class="font-semibold text-slate-800 dark:text-slate-100">${p.cropName}</p>
+              <p class="text-xs text-slate-400">Sown ${formatDate(p.sowingDate)} · harvest around ${formatDate(p.expectedHarvestDate)}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold ${STAGE_COLOR[p.stage]}">${STAGE_LABEL[p.stage]}</span>
+              <button type="button" data-remove-planting="${p.id}" aria-label="Remove ${p.cropName}" class="rounded-full p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40">${svgIcon("x", "h-4 w-4")}</button>
+            </div>
+          </div>
+          <div class="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200/70 dark:bg-slate-700/50">
+            <div class="h-full rounded-full bg-gradient-to-r from-kisan-500 to-amber-500" style="width: ${p.progressPct}%"></div>
+          </div>
+          <p class="mt-1 text-xs font-medium text-slate-500 dark:text-slate-400">${harvestCountdownText(p)}</p>`;
+        listEl.appendChild(div);
+      });
+
+      listEl.querySelectorAll<HTMLButtonElement>("[data-remove-planting]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          try {
+            await api.plantings.remove(btn.dataset.removePlanting!);
+            loadPlantings();
+          } catch {
+            showToast("Could not remove planting", "error");
+          }
+        });
+      });
+    }
+
+    async function loadPlantings() {
+      try {
+        const plantings = await api.plantings.list();
+        renderPlantings(plantings);
+        renderHarvestReminder(plantings);
+      } catch {
+        // section shows empty state on next successful load
+      }
+    }
+
+    async function populateCropDropdown() {
+      const select = document.getElementById("planting-crop") as HTMLSelectElement | null;
+      if (!select) return;
+      try {
+        const crops = await api.getCrops();
+        crops.forEach((crop) => {
+          const opt = document.createElement("option");
+          opt.value = crop.name;
+          opt.textContent = crop.name;
+          select.appendChild(opt);
+        });
+      } catch {
+        // dropdown just stays with the placeholder; add form validates anyway
+      }
+    }
+
+    // ---- Escalations (expert help) ----
+    const ESCALATION_STATUS_LABEL: Record<Escalation["status"], string> = {
+      submitted: "Submitted",
+      "in-review": "In review",
+      resolved: "Resolved",
+    };
+
+    function renderEscalations(escalations: Escalation[]) {
+      const listEl = document.getElementById("escalations-list");
+      if (!listEl) return;
+      listEl.innerHTML = "";
+
+      if (escalations.length === 0) {
+        listEl.appendChild(emptyState("No expert requests yet."));
+        return;
+      }
+
+      escalations.forEach((e) => {
+        const div = document.createElement("div");
+        div.className = "glass-panel p-3 text-sm";
+        div.innerHTML = `
+          <div class="flex items-start justify-between gap-2">
+            <p class="font-semibold text-slate-800 dark:text-slate-100">${e.disease}</p>
+            <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600 dark:bg-slate-700/60 dark:text-slate-300">${ESCALATION_STATUS_LABEL[e.status]}</span>
+          </div>
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Take reference <span class="font-semibold text-slate-700 dark:text-slate-200">${e.referenceCode}</span> to ${e.referralOffice}, ${e.district}.</p>
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Or call the free Kisan Call Centre: <a href="tel:${e.helplineNumber.replace(/-/g, "")}" class="font-semibold text-kisan-600 dark:text-kisan-400">${e.helplineNumber}</a></p>
+          <p class="mt-1 text-[11px] text-slate-400">${formatDate(e.createdAt)}</p>`;
+        listEl.appendChild(div);
+      });
+    }
+
+    async function loadEscalations() {
+      try {
+        renderEscalations(await api.escalations.list());
+      } catch {
+        // section shows empty state on next successful load
+      }
+    }
+
+    async function escalate(report: { id: string; disease: string; imageUrl: string }) {
+      if (!currentState || !currentDistrict) {
+        showToast("Please set your state and district in Farm Details first", "info");
+        return;
+      }
+      try {
+        const escalation = await api.escalations.create({
+          diseaseReportId: report.id,
+          disease: report.disease,
+          imageUrl: report.imageUrl,
+          state: currentState,
+          district: currentDistrict,
+        });
+        showToast(`Request sent. Reference ${escalation.referenceCode} — take it to ${escalation.referralOffice}.`, "success");
+        loadEscalations();
+      } catch (err) {
+        showToast((err as Error).message || "Could not send expert request", "error");
+      }
+    }
+
+    // ---- Friends ----
+    function renderFriends(friends: Friend[]) {
+      const listEl = document.getElementById("friends-list");
+      if (!listEl) return;
+      listEl.innerHTML = "";
+
+      if (friends.length === 0) {
+        listEl.appendChild(emptyState("No friends added yet."));
+        return;
+      }
+
+      friends.forEach((friend) => {
+        const row = document.createElement("div");
+        row.className = "glass-panel flex items-center justify-between gap-2 p-3 text-sm";
+        row.innerHTML = `
+          <span><span class="font-semibold text-slate-800 dark:text-slate-100">${friend.name}</span>
+          <span class="ml-2 text-slate-400">${friend.phoneNumber}</span></span>
+          <button type="button" data-remove-friend="${friend.id}" aria-label="Remove ${friend.name}" class="rounded-full p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40">${svgIcon("x", "h-4 w-4")}</button>`;
+        listEl.appendChild(row);
+      });
+
+      listEl.querySelectorAll<HTMLButtonElement>("[data-remove-friend]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          try {
+            await api.friends.remove(btn.dataset.removeFriend!);
+            loadFriends();
+          } catch {
+            showToast("Could not remove friend", "error");
+          }
+        });
+      });
+    }
+
+    async function loadFriends() {
+      try {
+        renderFriends(await api.friends.list());
+      } catch {
+        // silently skip; section shows empty state on next successful load
+      }
+    }
+
     async function init() {
       const user = await waitForAuthInit();
       if (!user) {
+        loadingEl?.classList.add("hidden");
         guardEl?.classList.remove("hidden");
         return;
       }
 
       try {
         const { farmer } = await api.auth.session();
+        loadingEl?.classList.add("hidden");
         contentEl?.classList.remove("hidden");
+
+        currentState = farmer.preferences.state ?? "";
+        currentDistrict = farmer.preferences.district ?? "";
 
         document.getElementById("account-name")!.textContent = farmer.name;
         document.getElementById("account-phone")!.innerHTML = `<span>${farmer.phoneNumber}</span>`;
@@ -140,6 +490,15 @@ import { INDIAN_STATES, SEASONS } from "@/utils/constants";
         (document.getElementById("pref-village") as HTMLInputElement).value = farmer.preferences.village ?? "";
         (document.getElementById("pref-land") as HTMLInputElement).value = farmer.preferences.landAreaAcres?.toString() ?? "";
         (document.getElementById("pref-season") as HTMLSelectElement).value = farmer.preferences.defaultSeason ?? "";
+
+        homeLatitude = farmer.preferences.homeLatitude;
+        homeLongitude = farmer.preferences.homeLongitude;
+        showHomeLocation(homeLatitude, homeLongitude);
+
+        populateCropDropdown();
+        loadPlantings();
+        loadFriends();
+        loadEscalations();
 
         const history = await api.getHistory();
 
@@ -162,7 +521,24 @@ import { INDIAN_STATES, SEASONS } from "@/utils/constants";
           history.diseaseReports.forEach((r) => {
             const div = document.createElement("div");
             div.className = "glass-panel p-3 text-sm";
-            div.innerHTML = `<p class="font-semibold text-slate-800 dark:text-slate-100">${r.disease}</p><p class="mt-1 text-xs text-slate-400">${formatDate(r.createdAt)} · ${r.confidencePct}% confidence</p>`;
+            const canEscalate = !r.isHealthy;
+            div.innerHTML = `
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <p class="font-semibold text-slate-800 dark:text-slate-100">${r.disease}</p>
+                  <p class="mt-1 text-xs text-slate-400">${formatDate(r.createdAt)} · ${r.confidencePct}% confidence</p>
+                </div>
+                ${
+                  canEscalate
+                    ? `<button type="button" data-escalate class="btn-secondary shrink-0 !px-3 !py-1.5 text-xs">${svgIcon("badge-check", "h-3.5 w-3.5")} Ask an expert</button>`
+                    : ""
+                }
+              </div>`;
+            if (canEscalate) {
+              div.querySelector("[data-escalate]")?.addEventListener("click", () =>
+                escalate({ id: r.id, disease: r.disease, imageUrl: r.imageUrl })
+              );
+            }
             diseaseEl.appendChild(div);
           });
         }
@@ -192,20 +568,43 @@ import { INDIAN_STATES, SEASONS } from "@/utils/constants";
         }
       } catch (err) {
         showToast("Could not load your account. Please log in again.", "error");
+        loadingEl?.classList.add("hidden");
         guardEl?.classList.remove("hidden");
         contentEl?.classList.add("hidden");
       }
     }
 
-    document.getElementById("logout-btn")?.addEventListener("click", async () => {
-      await signOut();
-      window.location.href = "/";
+    // ---- Home location detect ----
+    document.getElementById("pref-detect-location-btn")?.addEventListener("click", async () => {
+      const statusEl = document.getElementById("pref-location-status");
+      if (statusEl) {
+        statusEl.textContent = "Detecting your location...";
+        statusEl.classList.remove("hidden");
+      }
+      try {
+        const detected = await detectLocation();
+        homeLatitude = detected.latitude;
+        homeLongitude = detected.longitude;
+
+        const stateEl = document.getElementById("pref-state") as HTMLSelectElement;
+        const match = Array.from(stateEl.options).find((o) => o.value.toLowerCase() === detected.state.toLowerCase());
+        if (match) stateEl.value = match.value;
+        (document.getElementById("pref-district") as HTMLInputElement).value = detected.district;
+
+        showHomeLocation(homeLatitude, homeLongitude);
+        statusEl?.classList.add("hidden");
+        showToast("Field location captured — press Save Details to keep it", "success");
+      } catch (err) {
+        statusEl?.classList.add("hidden");
+        showToast((err as Error).message, "error");
+      }
     });
 
+    // ---- Save profile ----
     document.getElementById("preferences-form")?.addEventListener("submit", async (e) => {
       e.preventDefault();
       try {
-        await api.profile.update({
+        const updated = await api.profile.update({
           name: (document.getElementById("pref-name") as HTMLInputElement).value.trim() || undefined,
           preferredLanguage: (document.getElementById("pref-language") as HTMLSelectElement).value as any,
           state: (document.getElementById("pref-state") as HTMLSelectElement).value || undefined,
@@ -213,11 +612,74 @@ import { INDIAN_STATES, SEASONS } from "@/utils/constants";
           village: (document.getElementById("pref-village") as HTMLInputElement).value || undefined,
           landAreaAcres: Number((document.getElementById("pref-land") as HTMLInputElement).value) || undefined,
           defaultSeason: ((document.getElementById("pref-season") as HTMLSelectElement).value || undefined) as any,
+          homeLatitude,
+          homeLongitude,
         });
-        showToast("Preferences saved", "success");
+        currentState = updated.preferences.state ?? "";
+        currentDistrict = updated.preferences.district ?? "";
+        showToast("Details saved", "success");
       } catch (err) {
-        showToast("Could not save preferences", "error");
+        showToast("Could not save details", "error");
       }
+    });
+
+    // ---- Add planting ----
+    document.getElementById("planting-add-form")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const cropEl = document.getElementById("planting-crop") as HTMLSelectElement;
+      const dateEl = document.getElementById("planting-date") as HTMLInputElement;
+      if (!cropEl.value || !dateEl.value) return;
+
+      try {
+        await api.plantings.add({ cropName: cropEl.value, sowingDate: dateEl.value });
+        cropEl.value = "";
+        dateEl.value = "";
+        loadPlantings();
+        showToast("Planting added", "success");
+      } catch (err) {
+        showToast((err as Error).message || "Could not add planting", "error");
+      }
+    });
+
+    // ---- Add friend ----
+    document.getElementById("friend-add-form")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const nameEl = document.getElementById("friend-name") as HTMLInputElement;
+      const phoneEl = document.getElementById("friend-phone") as HTMLInputElement;
+      try {
+        await api.friends.add({ name: nameEl.value.trim(), phoneNumber: phoneEl.value.trim() });
+        nameEl.value = "";
+        phoneEl.value = "";
+        loadFriends();
+        showToast("Friend added", "success");
+      } catch (err) {
+        showToast((err as Error).message || "Could not add friend", "error");
+      }
+    });
+
+    // ---- Broadcast ----
+    document.getElementById("broadcast-form")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const messageEl = document.getElementById("broadcast-message") as HTMLTextAreaElement;
+      const message = messageEl.value.trim();
+      if (!message) return;
+
+      try {
+        const result = await api.friends.broadcast(message);
+        if (result.sent > 0) {
+          showToast(`SMS sent to ${result.sent} of ${result.total} friends`, "success");
+          messageEl.value = "";
+        } else {
+          showToast(result.reason || "SMS provider is not configured yet — message was not sent", "info");
+        }
+      } catch (err) {
+        showToast((err as Error).message || "Could not broadcast", "error");
+      }
+    });
+
+    document.getElementById("logout-btn")?.addEventListener("click", async () => {
+      await signOut();
+      window.location.href = "/";
     });
 
     init();

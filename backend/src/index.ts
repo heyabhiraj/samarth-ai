@@ -19,6 +19,10 @@ import auth from "./routes/auth";
 import profile from "./routes/profile";
 import history from "./routes/history";
 import geocode from "./routes/geocode";
+import schemes from "./routes/schemes";
+import friends from "./routes/friends";
+import plantings from "./routes/plantings";
+import escalations from "./routes/escalations";
 
 const app = new Hono<{ Bindings: Env; Variables: AuthVariables }>();
 
@@ -34,7 +38,7 @@ app.use(
   "/api/*",
   cors({
     origin: "*",
-    allowMethods: ["GET", "POST", "PUT", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
   })
 );
@@ -56,6 +60,10 @@ app.route("/api/auth", auth);
 app.route("/api/profile", profile);
 app.route("/api/history", history);
 app.route("/api/geocode", geocode);
+app.route("/api/schemes", schemes);
+app.route("/api/friends", friends);
+app.route("/api/plantings", plantings);
+app.route("/api/escalations", escalations);
 
 app.notFound((c) => fail(c, "NOT_FOUND", "Route not found", 404));
 

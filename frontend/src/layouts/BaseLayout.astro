@@ -3,6 +3,7 @@ import Navbar from "@/components/Navbar.astro";
 import BottomNav from "@/components/BottomNav.astro";
 import FloatingActionButton from "@/components/FloatingActionButton.astro";
 import ToastContainer from "@/components/ToastContainer.astro";
+import SchemesSidebar from "@/components/SchemesSidebar.astro";
 import "@/styles/global.css";
 
 interface Props {
@@ -38,6 +39,7 @@ const { title, description = "AI-powered Smart Water, Crop & Advisory System for
     <BottomNav />
     <FloatingActionButton />
     <ToastContainer />
+    <SchemesSidebar />
     <script>
       import "@/utils/theme-toggle";
     </script>

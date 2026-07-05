@@ -148,6 +148,60 @@ export interface FarmerPreferences {
   village?: string;
   landAreaAcres?: number;
   defaultSeason?: Season;
+  homeLatitude?: number;
+  homeLongitude?: number;
+}
+
+export interface Friend {
+  id: string;
+  name: string;
+  phoneNumber: string;
+  createdAt: string;
+}
+
+export interface GovtScheme {
+  name: string;
+  level: "national" | "state";
+  category: string;
+  benefit: string;
+  eligibility: string;
+  howToApply: string;
+  officialSource: string;
+}
+
+export interface SchemesResponse {
+  state: string;
+  language: SupportedLanguage;
+  schemes: GovtScheme[];
+  disclaimer: string;
+}
+
+export interface PlantingWithStatus {
+  id: string;
+  cropName: string;
+  sowingDate: string;
+  avgDurationDays: number;
+  expectedHarvestDate: string;
+  createdAt: string;
+  daysSinceSowing: number;
+  daysToHarvest: number;
+  progressPct: number;
+  stage: "sowing" | "growing" | "maturing" | "harvest-ready" | "overdue";
+}
+
+export interface Escalation {
+  id: string;
+  diseaseReportId?: string;
+  disease: string;
+  imageUrl?: string;
+  note?: string;
+  state: string;
+  district: string;
+  referralOffice: string;
+  helplineNumber: string;
+  referenceCode: string;
+  status: "submitted" | "in-review" | "resolved";
+  createdAt: string;
 }
 
 export interface Farmer {

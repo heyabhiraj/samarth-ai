@@ -90,11 +90,11 @@ Keep language simple. Do not add any other text.`;
 }
 
 /**
- * Sends an SMS via the configured provider. No-op stub until SMS_API_KEY is
- * set — the advisory text is still generated and returned to the caller so
- * the UI/notification center always has content to display.
+ * Sends a raw SMS via the configured provider. No-op stub until SMS_API_KEY
+ * is set — callers always get a structured result so the UI can explain
+ * whether the message actually went out.
  */
-export async function sendSmsAdvisory(env: Env, phoneNumber: string, alert: AdvisoryAlert): Promise<{ sent: boolean; reason?: string }> {
+export async function sendRawSms(env: Env, phoneNumber: string, text: string): Promise<{ sent: boolean; reason?: string }> {
   if (!env.SMS_API_KEY) {
     return { sent: false, reason: "SMS provider not configured (SMS_API_KEY missing)" };
   }
@@ -102,6 +102,10 @@ export async function sendSmsAdvisory(env: Env, phoneNumber: string, alert: Advi
   // Real integration point, e.g. MSG91:
   // await fetch(`https://api.msg91.com/api/v5/flow/`, { method: "POST", headers: { authkey: env.SMS_API_KEY }, body: ... })
   void phoneNumber;
-  void alert;
+  void text;
   return { sent: true };
+}
+
+export async function sendSmsAdvisory(env: Env, phoneNumber: string, alert: AdvisoryAlert): Promise<{ sent: boolean; reason?: string }> {
+  return sendRawSms(env, phoneNumber, alert.smsText || `KISAN ALERT: ${alert.title}. ${alert.message}`.slice(0, 160));
 }

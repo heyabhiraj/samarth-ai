@@ -228,6 +228,10 @@ export interface FarmerPreferences {
   village?: string;
   landAreaAcres?: number;
   defaultSeason?: Season;
+  // Saved GPS position of the farmer's field ("home location"), captured
+  // via the browser Geolocation API on the account page.
+  homeLatitude?: number;
+  homeLongitude?: number;
 }
 
 // Farmer document ID is the Firebase Authentication UID — the account
@@ -246,6 +250,70 @@ export type PublicFarmer = Farmer;
 export interface SessionResponse {
   farmer: PublicFarmer;
   isNewFarmer: boolean;
+}
+
+// ---------- Friends (SMS broadcast list) ----------
+export interface Friend {
+  id: string;
+  farmerId: string;
+  name: string;
+  phoneNumber: string;
+  createdAt: string;
+}
+
+// ---------- Government schemes ----------
+export interface GovtScheme {
+  name: string;
+  level: "national" | "state";
+  category: string;
+  benefit: string;
+  eligibility: string;
+  howToApply: string;
+  officialSource: string;
+}
+
+export interface SchemesResponse {
+  state: string;
+  language: SupportedLanguage;
+  schemes: GovtScheme[];
+  disclaimer: string;
+}
+
+// ---------- Plantings (harvest reminders) ----------
+export interface Planting {
+  id: string;
+  farmerId: string;
+  cropName: string;
+  sowingDate: string; // ISO date (YYYY-MM-DD)
+  avgDurationDays: number;
+  expectedHarvestDate: string; // ISO date, derived = sowingDate + avgDurationDays
+  createdAt: string;
+}
+
+export interface PlantingWithStatus extends Planting {
+  daysSinceSowing: number;
+  daysToHarvest: number;
+  progressPct: number;
+  stage: "sowing" | "growing" | "maturing" | "harvest-ready" | "overdue";
+}
+
+// ---------- Expert escalations (to Rythu Seva Kendra / agri office) ----------
+export type EscalationStatus = "submitted" | "in-review" | "resolved";
+
+export interface Escalation {
+  id: string;
+  farmerId: string;
+  diseaseReportId?: string;
+  disease: string;
+  imageUrl?: string;
+  note?: string;
+  state: string;
+  district: string;
+  referralOffice: string;
+  helplineNumber: string;
+  referenceCode: string;
+  status: EscalationStatus;
+  createdAt: string;
 }
 
 export interface HistoryResponse {

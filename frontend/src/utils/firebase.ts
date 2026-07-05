@@ -24,6 +24,9 @@ let authPromise: Promise<Auth> | null = null;
 // Last-known auth state, kept in sync by a persistent listener so
 // synchronous UI (nav labels, form prefill) can read a "good enough,
 // updates within milliseconds" value without every caller awaiting.
+// IMPORTANT: stays `undefined` (unknown) until the first onAuthStateChanged
+// emission — session restore from IndexedDB is async, so eagerly assuming
+// "signed out" here caused the account page to reject logged-in farmers.
 let cachedUser: User | null | undefined = undefined;
 
 async function loadAuth(): Promise<Auth> {
@@ -39,7 +42,6 @@ async function loadAuth(): Promise<Auth> {
       ]);
       const app = getApps()[0] ?? initializeApp(firebaseConfig);
       const auth = getAuth(app);
-      cachedUser = null;
       onAuthStateChanged(auth, (user) => {
         cachedUser = user;
         window.dispatchEvent(new Event("kisan:auth-change"));
@@ -50,7 +52,7 @@ async function loadAuth(): Promise<Auth> {
   return authPromise;
 }
 
-/** Best-effort synchronous check — false until the SDK has loaded once; use waitForAuthInit() when correctness matters more than instant paint. */
+/** Best-effort synchronous check — false until the SDK has restored the session; use waitForAuthInit() when correctness matters more than instant paint. */
 export function isLoggedIn(): boolean {
   if (!hasFirebaseConfig()) return false;
   void loadAuth(); // kick off loading in the background so state resolves soon
@@ -63,18 +65,15 @@ export function getCachedUser(): User | null {
   return cachedUser ?? null;
 }
 
-/** Resolves once Firebase has loaded and restored (or confirmed there's no) persisted session. */
+/** Resolves once Firebase has loaded AND finished restoring (or confirming there's no) persisted session. */
 export async function waitForAuthInit(): Promise<User | null> {
   if (!hasFirebaseConfig()) return null;
   const auth = await loadAuth();
-  if (cachedUser !== undefined) return cachedUser;
-  const { onAuthStateChanged } = await import("firebase/auth");
-  return new Promise((resolve) => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      unsubscribe();
-      resolve(user);
-    });
-  });
+  // authStateReady() settles only after the initial session restore —
+  // this is what makes "reload /account while logged in" work.
+  await auth.authStateReady();
+  cachedUser = auth.currentUser;
+  return auth.currentUser;
 }
 
 /** Returns a fresh (auto-refreshed by the SDK) ID token, or null if signed out. */

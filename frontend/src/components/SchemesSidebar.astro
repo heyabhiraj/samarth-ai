@@ -1,0 +1,145 @@
+---
+import Icon from "@/components/Icon.astro";
+import { INDIAN_STATES } from "@/utils/constants";
+---
+
+<div id="schemes-backdrop" class="fixed inset-0 z-40 hidden bg-black/40 backdrop-blur-sm"></div>
+
+<aside
+  id="schemes-sidebar"
+  class="fixed inset-y-0 right-0 z-50 flex w-full max-w-md translate-x-full flex-col border-l border-white/40 bg-white/95 shadow-2xl backdrop-blur-lg transition-transform duration-300 dark:border-white/10 dark:bg-slate-900/95"
+  aria-label="Government schemes for farmers"
+>
+  <div class="flex items-center justify-between border-b border-slate-200/60 p-4 dark:border-white/10">
+    <p class="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white">
+      <Icon name="bell" class="h-5 w-5 text-kisan-600 dark:text-kisan-400" />
+      <span data-i18n="schemes.title">Govt Schemes For You</span>
+    </p>
+    <button id="schemes-close-btn" type="button" class="rounded-full p-2 text-slate-500 hover:bg-slate-900/5 dark:text-slate-300 dark:hover:bg-white/5" aria-label="Close">
+      <Icon name="x" class="h-5 w-5" />
+    </button>
+  </div>
+
+  <div class="flex items-center gap-2 border-b border-slate-200/60 p-4 dark:border-white/10">
+    <select
+      id="schemes-state-select"
+      class="flex-1 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-sm text-slate-800 focus:border-kisan-500 focus:outline-none focus:ring-2 focus:ring-kisan-500/30 dark:border-white/10 dark:bg-slate-800/80 dark:text-white"
+    >
+      <option value="" disabled selected>Select your state</option>
+      {INDIAN_STATES.map((state) => <option value={state}>{state}</option>)}
+    </select>
+    <button id="schemes-load-btn" type="button" class="btn-primary !px-4 !py-2 text-sm">
+      <span data-i18n="schemes.show">Show</span>
+    </button>
+  </div>
+
+  <div id="schemes-content" class="flex-1 overflow-y-auto p-4">
+    <p class="py-8 text-center text-sm text-slate-400" data-i18n="schemes.pickState">
+      Choose your state to see government schemes you may be eligible for.
+    </p>
+  </div>
+
+  <p class="border-t border-slate-200/60 p-3 text-center text-[11px] leading-snug text-slate-400 dark:border-white/10" id="schemes-disclaimer"></p>
+</aside>
+
+<script>
+  import { api } from "@/services/api";
+  import { getUILanguage } from "@/utils/i18n";
+  import { isLoggedIn } from "@/utils/auth";
+  import { svgIcon } from "@/utils/icons";
+  import type { GovtScheme } from "@/types";
+
+  const STATE_STORAGE_KEY = "kisan-schemes-state";
+
+  const sidebar = document.getElementById("schemes-sidebar");
+  const backdrop = document.getElementById("schemes-backdrop");
+  const contentEl = document.getElementById("schemes-content");
+  const disclaimerEl = document.getElementById("schemes-disclaimer");
+  const stateSelect = document.getElementById("schemes-state-select") as HTMLSelectElement | null;
+
+  let loadedForKey = "";
+
+  function openSidebar() {
+    backdrop?.classList.remove("hidden");
+    sidebar?.classList.remove("translate-x-full");
+    prefillStateAndLoad();
+  }
+
+  function closeSidebar() {
+    backdrop?.classList.add("hidden");
+    sidebar?.classList.add("translate-x-full");
+  }
+
+  async function prefillStateAndLoad() {
+    if (stateSelect && !stateSelect.value) {
+      const saved = localStorage.getItem(STATE_STORAGE_KEY);
+      if (saved) {
+        stateSelect.value = saved;
+      } else if (isLoggedIn()) {
+        try {
+          const farmer = await api.profile.get();
+          if (farmer.preferences.state) stateSelect.value = farmer.preferences.state;
+        } catch {
+          // anonymous mode is fine
+        }
+      }
+    }
+    if (stateSelect?.value) loadSchemes(stateSelect.value);
+  }
+
+  function renderScheme(scheme: GovtScheme): string {
+    const levelBadge =
+      scheme.level === "national"
+        ? `<span class="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">National</span>`
+        : `<span class="rounded-full bg-kisan-100 px-2 py-0.5 text-[10px] font-semibold text-kisan-700 dark:bg-kisan-900/40 dark:text-kisan-300">State</span>`;
+
+    return `
+      <details class="glass-panel group mb-3 border border-slate-200/60 p-3 dark:border-white/10">
+        <summary class="flex cursor-pointer list-none items-start justify-between gap-2 [&::-webkit-details-marker]:hidden">
+          <span>
+            <span class="block text-sm font-bold text-slate-900 dark:text-white">${scheme.name}</span>
+            <span class="mt-1 flex items-center gap-1.5">${levelBadge}<span class="text-[11px] text-slate-400">${scheme.category}</span></span>
+          </span>
+          <span class="mt-0.5 shrink-0 text-slate-400 transition-transform group-open:rotate-90">${svgIcon("chevron-right", "h-4 w-4")}</span>
+        </summary>
+        <div class="mt-3 grid gap-2 border-t border-slate-200/60 pt-3 text-xs text-slate-600 dark:border-white/10 dark:text-slate-300">
+          <p><span class="font-semibold text-slate-800 dark:text-slate-100">Benefit: </span>${scheme.benefit}</p>
+          <p><span class="font-semibold text-slate-800 dark:text-slate-100">Who can apply: </span>${scheme.eligibility}</p>
+          <p><span class="font-semibold text-slate-800 dark:text-slate-100">How to apply: </span>${scheme.howToApply}</p>
+          <p class="text-slate-400"><span class="font-semibold">Official source: </span>${scheme.officialSource}</p>
+        </div>
+      </details>`;
+  }
+
+  async function loadSchemes(state: string) {
+    const language = getUILanguage();
+    const key = `${state}:${language}`;
+    if (key === loadedForKey || !contentEl) return;
+
+    localStorage.setItem(STATE_STORAGE_KEY, state);
+    contentEl.innerHTML = `<div class="grid gap-3"><div class="skeleton h-16"></div><div class="skeleton h-16"></div><div class="skeleton h-16"></div><div class="skeleton h-16"></div></div>`;
+
+    try {
+      const result = await api.getSchemes(state, language);
+      loadedForKey = key;
+      contentEl.innerHTML = result.schemes.map(renderScheme).join("");
+      if (disclaimerEl) disclaimerEl.textContent = result.disclaimer;
+    } catch {
+      loadedForKey = "";
+      contentEl.innerHTML = `<p class="py-8 text-center text-sm text-slate-400">Could not load schemes right now. Please try again in a moment.</p>`;
+    }
+  }
+
+  document.querySelectorAll("[data-open-schemes]").forEach((btn) => {
+    btn.addEventListener("click", openSidebar);
+  });
+  document.getElementById("schemes-close-btn")?.addEventListener("click", closeSidebar);
+  backdrop?.addEventListener("click", closeSidebar);
+  document.getElementById("schemes-load-btn")?.addEventListener("click", () => {
+    if (stateSelect?.value) loadSchemes(stateSelect.value);
+  });
+  window.addEventListener("kisan:language-change", () => {
+    loadedForKey = "";
+    if (!sidebar?.classList.contains("translate-x-full") && stateSelect?.value) loadSchemes(stateSelect.value);
+  });
+</script>

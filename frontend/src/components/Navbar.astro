@@ -6,6 +6,7 @@ const navItems = [
   { href: "/", label: "Home", icon: "home" as const, i18nKey: "nav.home" },
   { href: "/dashboard", label: "Dashboard", icon: "dashboard" as const, i18nKey: "nav.dashboard" },
   { href: "/crop-recommendation", label: "Crop Advisory", icon: "sprout" as const, i18nKey: "nav.cropAdvisory" },
+  { href: "/crop-calendar", label: "Calendar", icon: "calendar" as const, i18nKey: "nav.calendar" },
   { href: "/weather", label: "Weather", icon: "cloud-rain" as const, i18nKey: "nav.weather" },
   { href: "/groundwater", label: "Groundwater", icon: "droplets" as const, i18nKey: "nav.groundwater" },
   { href: "/satellite", label: "Satellite", icon: "satellite" as const, i18nKey: "nav.satellite" },
@@ -43,10 +44,15 @@ const currentPath = Astro.url.pathname;
     </nav>
 
     <div class="flex items-center gap-2">
-      <a href="/dashboard#alerts" class="relative rounded-full p-2 text-slate-600 hover:bg-slate-900/5 dark:text-slate-300 dark:hover:bg-white/5" aria-label="Alerts">
+      <button
+        type="button"
+        data-open-schemes
+        class="relative rounded-full p-2 text-slate-600 hover:bg-slate-900/5 dark:text-slate-300 dark:hover:bg-white/5"
+        aria-label="Government schemes and notifications"
+      >
         <Icon name="bell" class="h-5 w-5" />
         <span class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-rose-500"></span>
-      </a>
+      </button>
       <LanguageSwitcher />
       <button
         data-theme-toggle
