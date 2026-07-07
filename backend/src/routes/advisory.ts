@@ -23,7 +23,8 @@ advisory.get("/", async (c) => {
   }
 
   try {
-    const alerts = await checkDrySpell(c.env, parsed.data.state, parsed.data.district, parsed.data.village);
+    const language = c.req.query("language") as any;
+    const alerts = await checkDrySpell(c.env, parsed.data.state, parsed.data.district, parsed.data.village, language);
     const farmerId = c.get("farmerId");
 
     if (farmerId) {

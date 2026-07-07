@@ -1,5 +1,6 @@
 ---
 import Icon from "@/components/Icon.astro";
+import PaddyLoader from "@/components/PaddyLoader.astro";
 ---
 
 <div class="grid gap-6">
@@ -17,7 +18,7 @@ import Icon from "@/components/Icon.astro";
         <p class="font-semibold text-slate-700 dark:text-slate-200">Tap to take or upload a photo</p>
         <p class="text-xs text-slate-400">Focus clearly on the affected leaf or plant part · JPG, PNG, WEBP up to 8MB</p>
       </div>
-      <input id="disease-image-input" name="image" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" class="hidden" />
+      <input id="disease-image-input" name="image" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" />
     </label>
 
     <label class="grid gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
@@ -36,9 +37,8 @@ import Icon from "@/components/Icon.astro";
     </button>
   </form>
 
-  <div id="disease-loading" class="hidden glass-card flex items-center gap-3 p-6">
-    <Icon name="loader" class="h-5 w-5 animate-spin text-kisan-600" />
-    <p class="text-sm font-medium text-slate-600 dark:text-slate-300">Analyzing image with Gemini Vision...</p>
+  <div id="disease-loading" class="hidden glass-card p-6">
+    <PaddyLoader label="Analyzing your crop photo" labelKey="loader.disease" />
   </div>
 
   <div id="disease-result" class="hidden glass-card grid gap-5 p-6 sm:p-8 animate-slide-up">
@@ -147,7 +147,8 @@ import Icon from "@/components/Icon.astro";
       resultEl?.classList.remove("hidden");
       showToast("Analysis complete", "success");
     } catch (err) {
-      showToast("Could not analyze the image. Please try again.", "error");
+      const detail = err instanceof Error && err.message ? err.message : "";
+      showToast(detail ? `Could not analyze: ${detail}` : "Could not analyze the image. Please try again.", "error");
     } finally {
       loadingEl?.classList.add("hidden");
       submitBtn?.removeAttribute("disabled");

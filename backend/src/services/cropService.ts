@@ -9,7 +9,7 @@ import { getWeather } from "./weatherService";
 import { getSoil } from "./soilService";
 import { getGroundwater } from "./groundwaterService";
 import { getSatelliteData } from "./satelliteService";
-import { generateJSON } from "./geminiService";
+import { generateJSON, languageDirective } from "./geminiService";
 import { CROP_REFERENCE_DATA, type CropReference } from "../data/crops";
 
 const RECOMMENDATION_SCHEMA = {
@@ -45,7 +45,8 @@ const RECOMMENDATION_SCHEMA = {
 
 export async function recommendCrops(
   env: Env,
-  request: CropRecommendationRequest
+  request: CropRecommendationRequest,
+  language?: string
 ): Promise<CropRecommendationResponse> {
   const location = await resolveLocation(env, request.state, request.district, request.village);
 
@@ -80,7 +81,7 @@ GROUNDWATER (source: ${groundwater.source}):
 SATELLITE / NDVI (source: ${satellite.source}):
 - NDVI: ${satellite.ndvi}, vegetation health: ${satellite.vegetationHealth}, health score: ${satellite.healthScore}/100
 
-For each recommended crop, give expected yield (quintal/acre), water requirement (mm for the season), a risk level, a confidencePct, and 2-4 short reasons that reference the specific data above. Then give a 2-3 sentence aiSummary in simple language, and an overallConfidencePct for the whole recommendation set.`;
+For each recommended crop, give expected yield (quintal/acre), water requirement (mm for the season), a risk level, a confidencePct, and 2-4 short reasons that reference the specific data above. Then give a 2-3 sentence aiSummary in simple language, and an overallConfidencePct for the whole recommendation set.${languageDirective(language ?? request.language)}`;
 
   let aiResult: {
     recommendations: RecommendedCrop[];

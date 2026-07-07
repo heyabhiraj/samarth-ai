@@ -35,10 +35,11 @@ disease.post("/", async (c) => {
   }
 
   const cropName = typeof body.cropName === "string" ? body.cropName : undefined;
+  const language = typeof body.language === "string" ? (body.language as any) : undefined;
 
   try {
     const buffer = await file.arrayBuffer();
-    const result = await detectDisease(c.env, buffer, file.type, cropName, c.req.url);
+    const result = await detectDisease(c.env, buffer, file.type, cropName, c.req.url, language);
 
     const farmerId = c.get("farmerId");
     if (farmerId) {

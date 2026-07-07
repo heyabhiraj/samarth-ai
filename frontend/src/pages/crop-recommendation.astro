@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Icon from "@/components/Icon.astro";
+import PaddyLoader from "@/components/PaddyLoader.astro";
 import { INDIAN_STATES } from "@/utils/constants";
 ---
 
@@ -142,10 +143,8 @@ import { INDIAN_STATES } from "@/utils/constants";
       </div>
     </div>
 
-    <div id="crop-loading" class="mt-6 hidden grid gap-4 sm:grid-cols-3">
-      <div class="skeleton h-48"></div>
-      <div class="skeleton h-48"></div>
-      <div class="skeleton h-48"></div>
+    <div id="crop-loading" class="glass-card mt-6 hidden p-6">
+      <PaddyLoader label="Finding the best crops for your land" labelKey="loader.crops" />
     </div>
 
     <div id="crop-results" class="mt-8 hidden grid gap-6 animate-slide-up">

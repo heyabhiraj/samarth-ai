@@ -127,6 +127,7 @@ export interface CropRecommendationRequest {
   landAreaAcres: number;
   season: Season;
   cropPreference?: string;
+  language?: string;
 }
 
 export interface RecommendedCrop {

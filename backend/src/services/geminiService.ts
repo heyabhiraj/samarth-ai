@@ -1,6 +1,31 @@
-import type { Env } from "../types";
+import type { Env, SupportedLanguage } from "../types";
 
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
+
+export const LANGUAGE_NAMES: Record<SupportedLanguage, string> = {
+  hi: "Hindi",
+  en: "English",
+  te: "Telugu",
+  ta: "Tamil",
+  kn: "Kannada",
+  mr: "Marathi",
+  pa: "Punjabi",
+  gu: "Gujarati",
+  bn: "Bengali",
+};
+
+/**
+ * A strong instruction telling Gemini to write every human-readable string in
+ * the farmer's chosen language while keeping the JSON structure (field names
+ * and fixed enum values like "low"/"high") in English so the app can parse it.
+ * Returns an empty string for English so existing prompts are unchanged.
+ */
+export function languageDirective(language?: string): string {
+  if (!language || language === "en") return "";
+  const name = LANGUAGE_NAMES[language as SupportedLanguage];
+  if (!name || name === "English") return ""; // unknown/English → no directive
+  return `\n\nIMPORTANT — LANGUAGE: Write every human-readable text value (titles, messages, summaries, reasons, treatment steps, recommendations, descriptions, and any disease or crop name shown to the user) in ${name} using its native script. Keep the JSON field names and fixed enum values (such as "low", "medium", "high") exactly as specified, in English. Do not mix in English sentences.`;
+}
 
 export const ANTI_HALLUCINATION_INSTRUCTION = `You are an agricultural advisor for Indian farmers. Rules you must always follow:
 1. Never invent facts you were not given. Base every claim strictly on the data provided in the prompt.
@@ -22,6 +47,12 @@ async function callGemini(
   parts: Array<Record<string, unknown>>,
   options: GenerateOptions = {}
 ): Promise<string> {
+  if (!env.GEMINI_API_KEY) {
+    throw new Error("GEMINI_API_KEY is not configured on the server");
+  }
+  if (!model) {
+    throw new Error("Gemini model is not configured (GEMINI_TEXT_MODEL / GEMINI_VISION_MODEL)");
+  }
   const url = `${GEMINI_BASE_URL}/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
 
   const body: Record<string, unknown> = {
@@ -50,9 +81,16 @@ async function callGemini(
   }
 
   const json = (await res.json()) as any;
-  const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (typeof text !== "string") {
-    throw new Error("Gemini API returned no text content");
+  const candidate = json.candidates?.[0];
+  // Gemini can return a candidate with no text when the answer is split across
+  // multiple parts, or none at all when the prompt/response was blocked.
+  const text = candidate?.content?.parts?.map((p: any) => p?.text).filter((t: any) => typeof t === "string").join("") ?? "";
+  if (!text) {
+    const reason =
+      json.promptFeedback?.blockReason ??
+      candidate?.finishReason ??
+      "no text content returned";
+    throw new Error(`Gemini API returned no usable text (${reason})`);
   }
   return text;
 }

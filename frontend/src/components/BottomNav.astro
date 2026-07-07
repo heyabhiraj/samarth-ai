@@ -6,14 +6,13 @@ const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: "dashboard" as const, i18nKey: "nav.dashboard" },
   { href: "/crop-recommendation", label: "Advisory", icon: "sprout" as const, i18nKey: "nav.advisory" },
   { href: "/disease-detection", label: "Scan", icon: "camera" as const, i18nKey: "nav.scan" },
-  { href: "/voice-assistant", label: "Voice", icon: "mic" as const, i18nKey: "nav.voice" },
 ];
 
 const currentPath = Astro.url.pathname;
 ---
 
 <nav class="fixed inset-x-0 bottom-0 z-40 border-t border-white/40 bg-white/80 pb-[env(safe-area-inset-bottom)] backdrop-blur-lg dark:border-white/10 dark:bg-slate-950/80 lg:hidden">
-  <div class="mx-auto grid max-w-7xl grid-cols-5 px-2 py-1.5">
+  <div class="mx-auto grid max-w-7xl grid-cols-4 px-2 py-1.5">
     {navItems.map((item) => (
       <a
         href={item.href}

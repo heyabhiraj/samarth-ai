@@ -10,6 +10,7 @@ export const cropRecommendationSchema = geoLocationInputSchema.extend({
   landAreaAcres: z.number().positive().max(10000),
   season: z.enum(["kharif", "rabi", "zaid"]),
   cropPreference: z.string().max(60).optional(),
+  language: z.string().optional(),
 });
 
 export const drySpellCheckSchema = geoLocationInputSchema;

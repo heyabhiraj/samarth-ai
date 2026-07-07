@@ -44,6 +44,16 @@ function locationQuery(params: { state: string; district: string; village?: stri
   return search.toString();
 }
 
+/**
+ * The farmer's currently selected display language (persisted by the language
+ * switcher). Sent with AI requests so Gemini answers in their language.
+ * Read directly from localStorage to keep this module free of UI imports.
+ */
+function currentLanguage(): SupportedLanguage {
+  if (typeof localStorage === "undefined") return "hi";
+  return (localStorage.getItem("kisan-ui-language") as SupportedLanguage | null) ?? "hi";
+}
+
 export const api = {
   getWeather: (params: { state: string; district: string; village?: string }) =>
     request<WeatherData>(`/api/weather?${locationQuery(params)}`),
@@ -60,7 +70,7 @@ export const api = {
   getCrops: (season?: Season) => request<CropReference[]>(`/api/crops${season ? `?season=${season}` : ""}`),
 
   getAdvisory: (params: { state: string; district: string; village?: string }) =>
-    request<{ alerts: AdvisoryAlert[] }>(`/api/advisory?${locationQuery(params)}`),
+    request<{ alerts: AdvisoryAlert[] }>(`/api/advisory?${locationQuery(params)}&language=${currentLanguage()}`),
 
   recommendCrops: (payload: {
     state: string;
@@ -73,13 +83,14 @@ export const api = {
     request<CropRecommendationResponse>("/api/recommend", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ language: currentLanguage(), ...payload }),
     }),
 
   detectDisease: (image: File, cropName?: string) => {
     const form = new FormData();
     form.append("image", image);
     if (cropName) form.append("cropName", cropName);
+    form.append("language", currentLanguage());
     return request<DiseaseDetectionResult>("/api/disease", { method: "POST", body: form });
   },
 

@@ -25,7 +25,8 @@ recommend.post("/", async (c) => {
   }
 
   try {
-    const result = await recommendCrops(c.env, parsed.data);
+    const lang = parsed.data.language || c.req.header("x-preferred-language") || "hi";
+    const result = await recommendCrops(c.env, parsed.data, lang);
 
     const farmerId = c.get("farmerId");
     if (farmerId) {

@@ -1,17 +1,5 @@
-import type { Env, SupportedLanguage, VoiceQueryRequest, VoiceQueryResponse } from "../types";
-import { ANTI_HALLUCINATION_INSTRUCTION, generateJSON } from "./geminiService";
-
-const LANGUAGE_NAMES: Record<SupportedLanguage, string> = {
-  hi: "Hindi",
-  en: "English",
-  te: "Telugu",
-  ta: "Tamil",
-  kn: "Kannada",
-  mr: "Marathi",
-  pa: "Punjabi",
-  gu: "Gujarati",
-  bn: "Bengali",
-};
+import type { Env, VoiceQueryRequest, VoiceQueryResponse } from "../types";
+import { ANTI_HALLUCINATION_INSTRUCTION, LANGUAGE_NAMES, generateJSON } from "./geminiService";
 
 const VOICE_SCHEMA = {
   type: "object",

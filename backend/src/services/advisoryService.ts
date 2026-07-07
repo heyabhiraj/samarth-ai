@@ -1,8 +1,8 @@
-import type { AdvisoryAlert, AlertType, Env, GeoLocation } from "../types";
+import type { AdvisoryAlert, AlertType, Env, GeoLocation, SupportedLanguage } from "../types";
 import { getWeather } from "./weatherService";
 import { getSoil } from "./soilService";
 import { resolveLocation } from "./geocodeService";
-import { generateText } from "./geminiService";
+import { generateText, languageDirective } from "./geminiService";
 
 const DRY_SPELL_RAIN_THRESHOLD_MM = 5;
 const DRY_SPELL_TEMP_THRESHOLD_C = 35;
@@ -12,7 +12,8 @@ export async function checkDrySpell(
   env: Env,
   state: string,
   district: string,
-  village?: string
+  village?: string,
+  language?: SupportedLanguage
 ): Promise<AdvisoryAlert[]> {
   const location = await resolveLocation(env, state, district, village);
   const [weather, soil] = await Promise.all([getWeather(env, location), getSoil(env, location)]);
@@ -31,12 +32,12 @@ export async function checkDrySpell(
   if (isDrySpell) {
     alerts.push(
       await buildAlert(env, location, "dry-spell", "critical",
-        `Little rain expected over the next ${noRainDays} days, temperatures up to ${maxTemp}°C, and soil moisture is only ${soil.moisturePct}%.`)
+        `Little rain expected over the next ${noRainDays} days, temperatures up to ${maxTemp}°C, and soil moisture is only ${soil.moisturePct}%.`, language)
     );
   } else if (noRainDays >= 4 && soil.moisturePct < 30) {
     alerts.push(
       await buildAlert(env, location, "dry-spell", "warning",
-        `Low rainfall expected (${noRainDays} of the next 5 days dry) with soil moisture at ${soil.moisturePct}%. Monitor irrigation needs.`)
+        `Low rainfall expected (${noRainDays} of the next 5 days dry) with soil moisture at ${soil.moisturePct}%. Monitor irrigation needs.`, language)
     );
   }
 
@@ -44,7 +45,7 @@ export async function checkDrySpell(
   if (heavyRainDay) {
     alerts.push(
       await buildAlert(env, location, "rain", "warning",
-        `Heavy rain (${heavyRainDay.precipitationMm}mm) expected on ${heavyRainDay.date}.`)
+        `Heavy rain (${heavyRainDay.precipitationMm}mm) expected on ${heavyRainDay.date}.`, language)
     );
   }
 
@@ -56,7 +57,8 @@ async function buildAlert(
   location: GeoLocation,
   type: AlertType,
   severity: AdvisoryAlert["severity"],
-  situationSummary: string
+  situationSummary: string,
+  language?: SupportedLanguage
 ): Promise<AdvisoryAlert> {
   const prompt = `Write a short farm advisory alert for a farmer in ${location.district}, ${location.state}.
 Situation: ${situationSummary}
@@ -65,7 +67,7 @@ Alert type: ${type}
 Return two things separated by "|||":
 1. A one-line title (max 8 words)
 2. A friendly 1-2 sentence advisory message with a concrete recommended action (e.g. irrigate now, delay sowing, cover nursery, harvest before rain).
-Keep language simple. Do not add any other text.`;
+Keep language simple. Do not add any other text.${languageDirective(language)}`;
 
   let title = type === "rain" ? "Rain Alert" : "Dry Spell Alert";
   let message = situationSummary;

@@ -1,0 +1,168 @@
+---
+/**
+ * PaddyLoader — a paddy (rice ear) that fills white → green on a loop while the
+ * AI is generating or the page is rendering. Meant to be dropped inside any
+ * loading container. Pass a `label` (already-translated string) to show a
+ * caption with animated dots, and `data-i18n` on the caption via `labelKey`.
+ */
+interface Props {
+  label?: string;
+  labelKey?: string;
+  class?: string;
+}
+const { label = "Growing your answer", labelKey, class: className = "" } = Astro.props;
+
+// One ear of paddy: a stem plus grains placed in a herringbone pattern that
+// tapers toward the top. Rendered identically in the faint base layer and the
+// green fill layer (which is clipped to rise from the bottom).
+const grainRows = [17, 23, 29, 35, 41, 47];
+const grains = grainRows.flatMap((y, i) => {
+  const spread = 8.5 - i * 0.8; // taper toward the tip
+  return [
+    { x: 32 - spread, y, rot: 38 },
+    { x: 32 + spread, y, rot: -38 },
+  ];
+});
+grains.unshift({ x: 32, y: 11, rot: 0 }); // crowning grain
+---
+
+<div class:list={["paddy-loader", className]} role="status" aria-live="polite">
+  <div class="paddy-stage">
+    <svg class="paddy paddy-base" viewBox="0 0 64 64" aria-hidden="true">
+      <path class="paddy-stem" d="M32 62 C 32 50 31 40 32 30 C 32.5 24 32 18 32 12" />
+      {grains.map((g) => (
+        <ellipse class="paddy-grain" cx={g.x} cy={g.y} rx="3.2" ry="6" transform={`rotate(${g.rot} ${g.x} ${g.y})`} />
+      ))}
+    </svg>
+    <div class="paddy-clip">
+      <svg class="paddy paddy-fill" viewBox="0 0 64 64" aria-hidden="true">
+        <path class="paddy-stem" d="M32 62 C 32 50 31 40 32 30 C 32.5 24 32 18 32 12" />
+        {grains.map((g) => (
+          <ellipse class="paddy-grain" cx={g.x} cy={g.y} rx="3.2" ry="6" transform={`rotate(${g.rot} ${g.x} ${g.y})`} />
+        ))}
+      </svg>
+    </div>
+    <span class="paddy-glow" aria-hidden="true"></span>
+  </div>
+  <p class="paddy-caption"><span data-i18n={labelKey}>{label}</span><span class="paddy-dots"><span>.</span><span>.</span><span>.</span></span></p>
+</div>
+
+<style>
+  .paddy-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.85rem;
+    padding: 1.5rem 1rem;
+  }
+
+  .paddy-stage {
+    position: relative;
+    width: 84px;
+    height: 84px;
+    display: grid;
+    place-items: center;
+    transform-origin: 50% 92%;
+    animation: paddy-sway 2.6s ease-in-out infinite;
+  }
+
+  .paddy {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .paddy-base .paddy-grain {
+    fill: transparent;
+    stroke: rgb(148 163 184 / 0.55); /* slate-400 outline */
+    stroke-width: 1.4;
+  }
+  .paddy-base .paddy-stem {
+    fill: none;
+    stroke: rgb(148 163 184 / 0.55);
+    stroke-width: 2.4;
+    stroke-linecap: round;
+  }
+
+  .paddy-fill .paddy-grain {
+    fill: #22c55e;
+    stroke: #16a34a;
+    stroke-width: 1;
+  }
+  .paddy-fill .paddy-stem {
+    fill: none;
+    stroke: #15803d;
+    stroke-width: 2.6;
+    stroke-linecap: round;
+  }
+
+  /* The green layer is revealed from the bottom up, then held, then reset. */
+  .paddy-clip {
+    position: absolute;
+    inset: 0;
+    animation: paddy-fill 2.6s ease-in-out infinite;
+  }
+
+  /* A soft light sweeping up as it fills. */
+  .paddy-glow {
+    position: absolute;
+    left: 50%;
+    bottom: 4px;
+    width: 60px;
+    height: 60px;
+    transform: translateX(-50%);
+    border-radius: 9999px;
+    background: radial-gradient(circle, rgb(34 197 94 / 0.35) 0%, transparent 70%);
+    filter: blur(4px);
+    animation: paddy-glow 2.6s ease-in-out infinite;
+  }
+
+  .paddy-caption {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgb(21 128 61); /* kisan-700 */
+    letter-spacing: 0.01em;
+  }
+  :global(.dark) .paddy-caption {
+    color: rgb(134 239 172); /* kisan-300 */
+  }
+
+  .paddy-dots span {
+    animation: paddy-dot 1.4s infinite;
+  }
+  .paddy-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .paddy-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes paddy-fill {
+    0%   { clip-path: inset(100% 0 0 0); }
+    55%  { clip-path: inset(0 0 0 0); }
+    85%  { clip-path: inset(0 0 0 0); }
+    100% { clip-path: inset(100% 0 0 0); }
+  }
+
+  @keyframes paddy-glow {
+    0%, 100% { opacity: 0; transform: translateX(-50%) scale(0.7); }
+    55%      { opacity: 1; transform: translateX(-50%) scale(1); }
+    85%      { opacity: 0.8; }
+  }
+
+  @keyframes paddy-sway {
+    0%, 100% { transform: rotate(-4deg); }
+    50%      { transform: rotate(4deg); }
+  }
+
+  @keyframes paddy-dot {
+    0%, 100% { opacity: 0.2; }
+    50%      { opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .paddy-stage, .paddy-clip, .paddy-glow, .paddy-dots span {
+      animation-duration: 0.001ms;
+      animation-iteration-count: 1;
+    }
+    .paddy-clip { clip-path: inset(0 0 0 0); }
+  }
+</style>
