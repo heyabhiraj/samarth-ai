@@ -2,6 +2,9 @@
 
 AI-powered advisory platform that helps Indian farmers make data-driven decisions using satellite data, weather forecasts, groundwater information, and soil health data — combined with Gemini AI.
 
+**Production App:** [https://samarth-kisan-ai.pages.dev/](https://samarth-kisan-ai.pages.dev/)  
+**Demo Login Credentials:** Phone: `9999999999` | OTP: `123456`
+
 ## The Problem
 
 Farmers often face crop failure from unpredictable monsoons and a lack of data-driven guidance — crop choices are based on habit or hearsay rather than soil health, groundwater depth, or rainfall data, leading to financial loss and wasted resources.
